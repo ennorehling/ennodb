@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.6)
+project (tkv C)
+enable_testing()
+add_subdirectory (cutest)
+add_subdirectory (critbit)
+add_subdirectory (src bin)
