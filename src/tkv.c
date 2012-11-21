@@ -4,71 +4,50 @@
 #include <string.h>
 #include <critbit.h>
 
-extern char **environ;
-
-static void PrintEnv(FCGX_Stream *out, char *label, char **envp)
-{
-  FCGX_FPrintF(out, "%s:<br>\n<pre>\n", label);
-  for( ; *envp ; envp++) {
-    FCGX_FPrintF(out, "%s\n", *envp);
-  }
-  FCGX_FPrintF(out, "</pre><p>\n");
-}
-
 int main(int argc, char ** argv)
 {
   FCGX_Stream *in, *out, *err;
   FCGX_ParamArray envp;
   int count = 0;
+/*  critbit_tree cb = CRITBIT_TREE(); */
   
   while (FCGX_Accept(&in, &out, &err, &envp) >= 0) {
     char *contentLength = FCGX_GetParam("CONTENT_LENGTH", envp);
-    char **env;
     int len = 0;
-    const char *server_name = 0, *request_method = 0;
-    
-    for (env = envp ; *env ; ++env) {
-      if (strncmp(*env, "REQUEST_METHOD=", 15)==0) {
-        request_method = (*env)+15;
-      }
-      else if (strncmp(*env, "SERVER_NAME=", 12)==0) {
-        server_name = (*env)+12;
-      }
-    }
+    const char *request_method = 0, *query_string = 0;
+/*    const char *document_root = 0, *script_filename = 0; */
 
     FCGX_FPrintF(out,
-                 "Content-type: text/html\r\n"
+                 "Content-type: text/plain\r\n"
                  "\r\n"
-                 "<title>FastCGI echo (fcgiapp version)</title>"
-                 "<h1>FastCGI echo (fcgiapp version)</h1>\n"
-                 "Request number %d,  Process ID: %d<p>\n", ++count, getpid());
+                 "FastCGI echo (fcgiapp version)"
+                 "Request number %d,  Process ID: %d\n", ++count, getpid());
     
-    FCGX_FPrintF(out, "SERVER:  %s<p>\n", server_name);
-    FCGX_FPrintF(out, "REQUEST: %s<p>\n", request_method);
+    query_string = FCGX_GetParam("QUERY_STRING", envp);
+    request_method = FCGX_GetParam("REQUEST_METHOD", envp);
+    FCGX_FPrintF(out, "QUERY:   %s\n", query_string);
+    FCGX_FPrintF(out, "REQUEST: %s\n", request_method);
 
     if (contentLength != NULL)
-            len = strtol(contentLength, NULL, 10);
+      len = strtol(contentLength, NULL, 10);
     
     if (len <= 0) {
-      FCGX_FPrintF(out, "No data from standard input.<p>\n");
+      FCGX_FPrintF(out, "No data from standard input.\n");
     }
     else {
       int i, ch;
       
-      FCGX_FPrintF(out, "Standard input:<br>\n<pre>\n");
+      FCGX_FPrintF(out, "Standard input:\n\n");
       for (i = 0; i < len; i++) {
         if ((ch = FCGX_GetChar(in)) < 0) {
           FCGX_FPrintF(out,
-                       "Error: Not enough bytes received on standard input<p>\n");
+                       "Error: Not enough bytes received on standard input\n");
           break;
         }
         FCGX_PutChar(ch, out);
       }
-      FCGX_FPrintF(out, "\n</pre><p>\n");
+      FCGX_FPrintF(out, "\n\n");
     }
-    
-    PrintEnv(out, "Request environment", envp);
-    PrintEnv(out, "Initial environment", environ);
   } /* while */
   
   return 0;
