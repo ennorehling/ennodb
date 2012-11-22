@@ -1,5 +1,5 @@
 CFLAGS = -Wall
-BINS = build/bin/tkv-fcgi
+BINS = build/bin/ennodb-fcgi
 
 all: $(BINS)
 
@@ -9,7 +9,7 @@ build:
 build/Makefile: | build
 	cd build ; cmake ..
 
-build/bin/tkv-fcgi: build/Makefile
+build/bin/ennodb-fcgi: build/Makefile
 	cd build ; make
 
 install: $(BINS)

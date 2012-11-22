@@ -14,8 +14,8 @@ int main(int argc, char ** argv)
   while (FCGX_Accept(&in, &out, &err, &envp) >= 0) {
     char *contentLength = FCGX_GetParam("CONTENT_LENGTH", envp);
     int len = 0;
-    const char *request_method = 0, *query_string = 0;
-/*    const char *document_root = 0, *script_filename = 0; */
+    const char *request_method = 0, *query_string = 0, *request_uri = 0;
+    const char *script_name = 0;
 
     FCGX_FPrintF(out,
                  "Content-type: text/plain\r\n"
@@ -25,8 +25,12 @@ int main(int argc, char ** argv)
     
     query_string = FCGX_GetParam("QUERY_STRING", envp);
     request_method = FCGX_GetParam("REQUEST_METHOD", envp);
-    FCGX_FPrintF(out, "QUERY:   %s\n", query_string);
-    FCGX_FPrintF(out, "REQUEST: %s\n", request_method);
+    request_uri = FCGX_GetParam("REQUEST_URI", envp);
+    script_name = FCGX_GetParam("SCRIPT_NAME", envp);
+    FCGX_FPrintF(out, "SCRIPT_NAME: %s\n", script_name);
+    FCGX_FPrintF(out, "QUERY:       %s\n", query_string);
+    FCGX_FPrintF(out, "REQUEST:     %s\n", request_method);
+    FCGX_FPrintF(out, "REQUEST_URI: %s\n", request_uri);
 
     if (contentLength != NULL)
       len = strtol(contentLength, NULL, 10);
