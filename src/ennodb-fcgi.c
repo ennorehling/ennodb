@@ -4,53 +4,71 @@
 #include <string.h>
 #include <critbit.h>
 
+#define KEYSIZE 256
+#define VALSIZE 32768
+
+/* const char * content_type = "application/octet-stream"; */
+const char * content_type = "text/plain";
+
+static void do_create(critbit_tree *cb, const char *key, FCGX_Stream *in, FCGX_Stream *out)
+{
+  size_t keylen = strlen(key);
+  int n;
+  char dst[VALSIZE+KEYSIZE+1+sizeof(int)];
+
+  memcpy(dst, key, keylen);
+  dst[keylen] = 0;
+  n = FCGX_GetStr(dst+keylen+1+sizeof(int), VALSIZE, in);
+  *(int *)(dst+keylen+1) = n;
+  if (cb_insert(cb, dst, n+keylen+1+sizeof(int))) {
+    FCGX_FPrintF(out, "Status: 201 Created\r\n\r\n");    
+  }
+}
+
+static void do_read(critbit_tree *cb, const char *key, FCGX_Stream *out)
+{
+  int result;
+  size_t keylen = strlen(key);
+  const void * match;
+  result = cb_find_prefix(cb, key, keylen+1, &match, 1, 0);
+  if (result>0) {
+    const char * data = (const char *)match;
+    int n = *(int*)(data+keylen+1);
+    FCGX_FPrintF(out, "Content-type: %s\r\n\r\n", content_type);
+    FCGX_PutStr(data+keylen+1+sizeof(int), n, out);
+  } else {
+    FCGX_FPrintF(out, "Status: 404 Not Found\r\n\r\n");
+  }
+}
+
 int main(int argc, char ** argv)
 {
   FCGX_Stream *in, *out, *err;
   FCGX_ParamArray envp;
-  int count = 0;
-/*  critbit_tree cb = CRITBIT_TREE(); */
-  
+  critbit_tree cb = CRITBIT_TREE();
+
   while (FCGX_Accept(&in, &out, &err, &envp) >= 0) {
-    char *contentLength = FCGX_GetParam("CONTENT_LENGTH", envp);
-    int len = 0;
-    const char *request_method = 0, *query_string = 0, *request_uri = 0;
+    const char *request_method = 0;
     const char *script_name = 0;
+    const char *key;
 
-    FCGX_FPrintF(out,
-                 "Content-type: text/plain\r\n"
-                 "\r\n"
-                 "FastCGI echo (fcgiapp version)"
-                 "Request number %d,  Process ID: %d\n", ++count, getpid());
-    
-    query_string = FCGX_GetParam("QUERY_STRING", envp);
-    request_method = FCGX_GetParam("REQUEST_METHOD", envp);
-    request_uri = FCGX_GetParam("REQUEST_URI", envp);
-    script_name = FCGX_GetParam("SCRIPT_NAME", envp);
-    FCGX_FPrintF(out, "SCRIPT_NAME: %s\n", script_name);
-    FCGX_FPrintF(out, "QUERY:       %s\n", query_string);
-    FCGX_FPrintF(out, "REQUEST:     %s\n", request_method);
-    FCGX_FPrintF(out, "REQUEST_URI: %s\n", request_uri);
-
-    if (contentLength != NULL)
-      len = strtol(contentLength, NULL, 10);
-    
-    if (len <= 0) {
-      FCGX_FPrintF(out, "No data from standard input.\n");
+    script_name = FCGX_GetParam("SCRIPT_FILENAME", envp);
+    key = strrchr(script_name, '/');
+    if (!key || strlen(key)<=5) {
+      FCGX_FPrintF(out, "Status: 404 Not Found\r\n\r\n");
+      continue;
     }
-    else {
-      int i, ch;
-      
-      FCGX_FPrintF(out, "Standard input:\n\n");
-      for (i = 0; i < len; i++) {
-        if ((ch = FCGX_GetChar(in)) < 0) {
-          FCGX_FPrintF(out,
-                       "Error: Not enough bytes received on standard input\n");
-          break;
-        }
-        FCGX_PutChar(ch, out);
-      }
-      FCGX_FPrintF(out, "\n\n");
+    ++key;
+    request_method = FCGX_GetParam("REQUEST_METHOD", envp);
+    if (strcmp(request_method, "GET")==0) {
+      /* read */
+      do_read(&cb, key, out);
+    }
+    else if (strcmp(request_method, "PUT")==0) {
+      /* create */
+      do_create(&cb, key, in, out);
+    } else {
+      FCGX_FPrintF(out, "Status: 405 Method Not Supported\r\n\r\n");
     }
   } /* while */
   
