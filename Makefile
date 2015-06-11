@@ -2,7 +2,7 @@ PREFIX = /opt
 CFLAGS = -g -Wall -Werror -Wextra -Icritbit -std=c99 -Wconversion
 PROGRAMS = ennodb
 TESTS = tests
-WEBSITE = /var/www/html
+WEBSITE = /usr/share/nginx/www/
 
 ifeq "$(CC)" "clang"
 CFLAGS += -Weverything -Wno-padded 
@@ -42,7 +42,9 @@ clean:
 
 install: $(PROGRAMS)
 	sudo mkdir -p $(PREFIX)/bin
-	install html/*.* $(WEBSITE)
+	sudo mkdir -p /var/lib/ennodb
+	sudo chown www-data.www-data /var/lib/ennodb
+	sudo install html/*.* $(WEBSITE)
 	sudo install $(PROGRAMS) $(PREFIX)/bin
 	sudo install etc/init.d/* /etc/init.d/
 	sudo install etc/nginx/* /etc/nginx/

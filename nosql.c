@@ -97,52 +97,55 @@ int open_log(db_table *pl, const char *logfile) {
 
 int read_log(db_table *pl, const char *logfile) {
     int fd = _open(logfile, O_RDONLY);
+    int result = 0;
     if (fd>0) {
         void *logdata;
         off_t fsize = _lseek(fd, 0, SEEK_END);
+        if (fsize>0) {
 #ifdef WIN32
-        HANDLE fm = CreateFileMapping((HANDLE)_get_osfhandle(fd), NULL, PAGE_READONLY, 0, 0, NULL);
-        logdata = (void *)MapViewOfFile(fm, FILE_MAP_READ, 0, 0, fsize);
+            HANDLE fm = CreateFileMapping((HANDLE)_get_osfhandle(fd), NULL, PAGE_READONLY, 0, 0, NULL);
+            logdata = (void *)MapViewOfFile(fm, FILE_MAP_READ, 0, 0, fsize);
 #else
-        logdata = mmap(NULL, (size_t)fsize, PROT_READ, MAP_PRIVATE, fd, 0);
+            logdata = mmap(NULL, (size_t)fsize, PROT_READ, MAP_PRIVATE, fd, 0);
 #endif
-        if (logdata) {
-            short version = 0;
-            const char *data = (const char *)logdata;
-            if (fsize>=4 && memcmp(data, id4, 4) == 0) {
-                size_t header = 4 + sizeof(short);
-                memcpy(&version, data+4, sizeof(short));
-                data += header;
-            }
-            if (version < MIN_VERSION) {
-                printf("%s has deprecated version %d, not reading it.\n", logfile, version);
-                return -1;
-            }
-            else {
-                printf("reading %u bytes from binlogs\n", (unsigned)fsize);
-                while (data - fsize < (const char *)logdata) {
-                    db_entry entry;
-                    const char *key;
-                    size_t len;
-
-                    len = *(const size_t *)(const void *)data;
-                    data += sizeof(size_t);
-                    key = (const char *)data;
-                    data += len;
-                    entry.size = *(const size_t *)(const void *)data;
-                    data += sizeof(size_t);
-                    entry.data = memcpy(malloc(entry.size), (void *)data, entry.size);
-                    data += entry.size;
-                    set_key_i(pl, key, len - 1, &entry);
+            if (logdata) {
+                short version = 0;
+                const char *data = (const char *)logdata;
+                if (fsize>=4 && memcmp(data, id4, 4) == 0) {
+                    size_t header = 4 + sizeof(short);
+                    memcpy(&version, data+4, sizeof(short));
+                    data += header;
                 }
-            }
+                if (version < MIN_VERSION) {
+                    printf("%s has deprecated version %d, not reading it.\n", logfile, version);
+                    result = -1;
+                }
+                else {
+                    printf("reading %u bytes from binlogs\n", (unsigned)fsize);
+                    while (data - fsize < (const char *)logdata) {
+                        db_entry entry;
+                        const char *key;
+                        size_t len;
+                        
+                        len = *(const size_t *)(const void *)data;
+                        data += sizeof(size_t);
+                        key = (const char *)data;
+                        data += len;
+                        entry.size = *(const size_t *)(const void *)data;
+                        data += sizeof(size_t);
+                        entry.data = memcpy(malloc(entry.size), (void *)data, entry.size);
+                        data += entry.size;
+                        set_key_i(pl, key, len - 1, &entry);
+                    }
+                }
 #ifdef WIN32
-            UnmapViewOfFile(logdata);
+                UnmapViewOfFile(logdata);
 #else
-            munmap(logdata, (size_t)fsize);
+                munmap(logdata, (size_t)fsize);
 #endif
-            return version;
+                result = version;
+            }
         }
     }
-    return 0;
+    return result;
 }

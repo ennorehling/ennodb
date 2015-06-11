@@ -13,6 +13,7 @@
 #define _unlink(s) unlink(s)
 #endif
 
+static const char *binlog = "binlog.test";
 
 static db_entry mk_entry(const char *str) {
     db_entry ret;
@@ -59,16 +60,16 @@ static void test_replay_log_multi(CuTest *tc) {
     db_table tbl = { { 0 }, 0 };
     db_entry cur = mk_entry("HODOR");
 
-    _unlink("binlog.test");
-    open_log(&tbl, "binlog.test");
+    _unlink(binlog);
+    open_log(&tbl, binlog);
     set_key(&tbl, "hodor", &cur);
     cur = mk_entry("NOPE!");
     set_key(&tbl, "hodor", &cur);
     fclose(tbl.binlog);
     tbl.binlog = 0;
     cb_clear(&tbl.trie);
-    read_log(&tbl, "binlog.test");
-    _unlink("binlog.test");
+    read_log(&tbl, binlog);
+    _unlink(binlog);
     memset(&cur, 0, sizeof(cur));
     CuAssertIntEquals(tc, 200, get_key(&tbl, "hodor", &cur));
     CuAssertStrEquals(tc, "NOPE!", cur.data);
@@ -78,17 +79,29 @@ static void test_replay_log(CuTest *tc) {
     db_table tbl = { { 0 }, 0 };
     db_entry cur = mk_entry("HODOR");
 
-    _unlink("binlog.test");
-    open_log(&tbl, "binlog.test");
+    _unlink(binlog);
+    open_log(&tbl, binlog);
     set_key(&tbl, "hodor", &cur);
     fclose(tbl.binlog);
     tbl.binlog = 0;
     cb_clear(&tbl.trie);
-    read_log(&tbl, "binlog.test");
-    _unlink("binlog.test");
+    read_log(&tbl, binlog);
+    _unlink(binlog);
     memset(&cur, 0, sizeof(cur));
     CuAssertIntEquals(tc, 200, get_key(&tbl, "hodor", &cur));
     CuAssertStrEquals(tc, "HODOR", (const char *)cur.data);
+}
+
+static void test_empty_log(CuTest *tc) {
+    db_table tbl = { { 0 }, 0 };
+    FILE *F;
+
+    _unlink(binlog);
+    F = fopen(binlog, "w");
+    fclose(F);
+    cb_clear(&tbl.trie);
+    CuAssertIntEquals(tc, 0, read_log(&tbl, binlog));
+    _unlink(binlog);
 }
 
 void add_suite_critbit(CuSuite *suite);
@@ -102,6 +115,7 @@ int main(void) {
     SUITE_ADD_TEST(suite, test_nosql_idempotent);
     SUITE_ADD_TEST(suite, test_nosql_update);
     SUITE_ADD_TEST(suite, test_replay_log);
+    SUITE_ADD_TEST(suite, test_empty_log);
     SUITE_ADD_TEST(suite, test_replay_log_multi);
 
     CuSuiteRun(suite);
