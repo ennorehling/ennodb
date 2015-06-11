@@ -5,7 +5,7 @@ function update(result) {
 
 function reload(word) {
 $.ajax({
-    url: '/api/ennodb.cgi/' + word,
+    url: '/ennodb/' + word,
     success: function(result) {
     	update(result);
     },
@@ -32,7 +32,7 @@ el.addEventListener("click", function() {
     var word = $('#key').val();
     $.ajax({
     	type: "POST",
-        url: '/api/ennodb.cgi/' + word,
+        url: '/ennodb/' + word,
         data: $('#val').val(),
         complete: function() { reload(word); }
     });

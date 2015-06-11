@@ -16,29 +16,37 @@ static const char * get_prefix(const char *path) {
     return result ? result+1 : 0;
 }
 
-static int http_success(FCGX_Stream *out, db_entry *body) {
+static int http_response(FCGX_Stream *out, int http_code, const char *message, const char *body, size_t length)
+{
     FCGX_FPrintF(out,
-                 "Status: 200 OK\r\n"
+                 "Status: %d %s\r\n"
                  "Content-Type: text/plain\r\n"
                  "Content-Length: %u\r\n"
-                 "\r\n", body ? (unsigned int)body->size : 0);
+                 "\r\n", http_code, message, (unsigned int)length);
     if (body) {
-        FCGX_PutStr(body->data, (int)body->size, out);
+        FCGX_PutStr(body, (int)length, out);
     }
-    return 200;
+    return http_code;
+}
+
+static int http_success(FCGX_Stream *out, db_entry *body) {
+    size_t size = 0;
+    const char * data = "";
+    if (body) {
+        data = (const char *)body->data;
+        size = body->size;
+    }
+    return http_response(out, 200, "OK", data, size);
 }
 
 static int http_not_found(FCGX_Stream *out, const char *body) {
-    int http_result = 404;
     size_t len = body ? strlen(body) : 0;
+    return http_response(out, 404, "Not Found", body, len);
+}
 
-    FCGX_FPrintF(out,
-                 "Status: %d Not Found\r\n"
-                 "Content-Type: text/plain\r\n"
-                 "Content-Length: %u\r\n"
-                 "\r\n"
-                 "%s", http_result, (unsigned int)len, body ? body : "");
-    return http_result;
+static int http_invalid_method(FCGX_Stream *out, const char *body) {
+    size_t len = body ? strlen(body) : 0;
+    return http_response(out, 405, "Invalid Method", body, len);
 }
 
 static void done(void *self) {
@@ -78,6 +86,7 @@ static int process(void *self, FCGX_Request *req)
     printf("%s request for %s\n", method, prefix);
 
     if (!method || !prefix) {
+        http_invalid_method(req->out, "");
         return -1;
     }
     if (strcmp(method, "GET")==0) {
