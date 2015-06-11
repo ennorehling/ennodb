@@ -1,0 +1,11 @@
+language: c
+compiler:
+  - gcc
+  - clang
+script: s/travis-build
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libfcgi-dev autotools-dev
+os:
+  - linux
+  - osx

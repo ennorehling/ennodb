@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+function c_tap() {
+if [ "" = "`which runtests`" ]; then
+echo "installing prerequisites"
+cd c-tap-harness && ./autogen && ./configure --prefix $OLDPWD/opt && make install
+cd ..
+export PATH=$PATH:$PWD/opt/bin
+fi
+}
+
+# c_tap
+echo "building project"
+make -k && make test
