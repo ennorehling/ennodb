@@ -1,6 +1,3 @@
-[submodule "cutest"]
-	path = cutest
-	url = git@github.com:badgerman/cutest.git
 [submodule "critbit"]
 	path = critbit
-	url = git@github.com:badgerman/critbit.git
+	url = https://github.com/badgerman/critbit.git
