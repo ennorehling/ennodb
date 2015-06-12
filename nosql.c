@@ -80,6 +80,10 @@ void set_key(db_table *pl, const char *key, db_entry *entry) {
     set_key_i(pl, key, len, entry);
 }
 
+int close_log(db_table *pl) {
+    return fclose(pl->binlog);
+}
+
 int open_log(db_table *pl, const char *logfile) {
     pl->binlog = fopen(logfile, "a+");
     if (pl->binlog) {
