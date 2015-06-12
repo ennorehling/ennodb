@@ -29,7 +29,7 @@ critbit/critbit.o: critbit/critbit.c
 	$(CC) $(CFLAGS) -Wno-sign-conversion -o $@ -c $< $(INCLUDES)
 
 iniparser/iniparser.o: iniparser/iniparser.c
-	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
+	$(CC) $(CFLAGS) -Wno-sign-conversion -o $@ -c $< $(INCLUDES)
 
 cgiapp.a: cgiapp.o critbit/critbit.o iniparser/iniparser.o
 	$(AR) -q $@ $^
