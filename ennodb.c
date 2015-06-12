@@ -8,8 +8,11 @@
 #include <signal.h>
 #include <assert.h>
 #include <critbit.h>
+#include <iniparser.h>
 
-static const char * binlog = "binlog";
+static const char *binlog = "binlog";
+static const char *inifile = "ennodb.ini";
+static dictionary *config;
 
 static const char * get_prefix(const char *path) {
     const char * result = strrchr(path, '/');
@@ -141,12 +144,30 @@ static void signal_handler(int sig) {
     if (sig==SIGHUP) {
         printf("received SIGHUP\n");
         fflush(((db_table *)myapp.data)->binlog);
+        if (config) {
+            dictionary *ini = iniparser_new(inifile);
+            ini = iniparser_new(inifile);
+            if (ini) {
+                const char *str;
+                str = iniparser_getstr(ini, "ennodb:database");
+                if (str && strcmp(binlog, str)!=0) {
+                    binlog = str;
+                    // what now, cow?
+                }
+                iniparser_free(config);
+                config = ini;
+            }
+        }
     }
 }
 
 struct app * create_app(int argc, char **argv) {
     if (argc>1) {
-        binlog = argv[1];
+        inifile = argv[1];
+    }
+    config = iniparser_new(inifile);
+    if (config) {
+        binlog = iniparser_getstring(config, "ennodb:database", binlog);
     }
     myapp.data = calloc(1, sizeof(db_table));
     return &myapp;

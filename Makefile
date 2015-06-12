@@ -1,5 +1,5 @@
 PREFIX = /opt
-CFLAGS = -g -Wall -Werror -Wextra -Icritbit -std=c99 -Wconversion
+CFLAGS = -g -Wall -Werror -Wextra -Iiniparser -Icritbit -std=c99 -Wconversion
 PROGRAMS = ennodb
 TESTS = tests
 WEBSITE = /usr/share/nginx/www/
@@ -28,7 +28,10 @@ critbit/CuTest.o: critbit/CuTest.c
 critbit/critbit.o: critbit/critbit.c
 	$(CC) $(CFLAGS) -Wno-sign-conversion -o $@ -c $< $(INCLUDES)
 
-cgiapp.a: cgiapp.o critbit/critbit.o
+iniparser/iniparser.o: iniparser/iniparser.c
+	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
+
+cgiapp.a: cgiapp.o critbit/critbit.o iniparser/iniparser.o
 	$(AR) -q $@ $^
 
 ennodb: ennodb.o nosql.o cgiapp.a
