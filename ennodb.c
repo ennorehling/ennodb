@@ -106,8 +106,8 @@ static int process(void *self, FCGX_Request *req)
         char buffer[MAXENTRY];
         db_entry entry;
         size_t size = sizeof(buffer), len = 0;
-    
-        for (char *b = buffer; size; ) {
+        char *b;
+        for (b = buffer; size; ) {
             int result = FCGX_GetStr(b, (int)size, req->in);
             if (result > 0) {
                 size_t bytes = (size_t)result;

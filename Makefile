@@ -1,11 +1,11 @@
 PREFIX = /opt
-CFLAGS = -g -Wall -Werror -Wextra -Iiniparser -Icritbit -std=c99 -Wconversion
+CFLAGS = -g -Wall -Werror -Wextra -Iiniparser -Icritbit
 PROGRAMS = ennodb
 TESTS = tests
 WEBSITE = /usr/share/nginx/www/
 
 ifeq "$(CC)" "clang"
-CFLAGS += -Weverything -Wno-padded 
+CFLAGS += -Wno-padded -Wno-sign-conversion
 endif
 
 # http://www.thinkplexx.com/learn/howto/build-chain/make-based/prevent-gnu-make-from-always-removing-files-it-says-things-like-rm-or-removing-intermediate-files
@@ -26,10 +26,10 @@ critbit/CuTest.o: critbit/CuTest.c
 	$(CC) $(CFLAGS) -Wno-format-nonliteral -o $@ -c $< $(INCLUDES)
 
 critbit/critbit.o: critbit/critbit.c
-	$(CC) $(CFLAGS) -Wno-sign-conversion -o $@ -c $< $(INCLUDES)
+	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
 
 iniparser/iniparser.o: iniparser/iniparser.c
-	$(CC) $(CFLAGS) -Wno-sign-conversion -o $@ -c $< $(INCLUDES)
+	$(CC) $(CFLAGS) -Wno-unused-macros -o $@ -c $< $(INCLUDES)
 
 cgiapp.a: cgiapp.o critbit/critbit.o iniparser/iniparser.o
 	$(AR) -q $@ $^
@@ -41,7 +41,7 @@ tests: tests.o nosql.o critbit/test_critbit.o critbit/CuTest.o critbit/critbit.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f *~ *.a *.o critbit/*.o $(PROGRAMS) $(TESTS)
+	rm -f *~ *.a *.o */*.o $(PROGRAMS) $(TESTS)
 
 install: $(PROGRAMS)
 	sudo mkdir -p $(PREFIX)/bin
