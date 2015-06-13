@@ -5,7 +5,6 @@ export ITEST_PREFIX=/tmp/itest
 
 set -e
 make -k
-make test
 itest/setup.sh
 for test in itest/*.test ; do
 	$test

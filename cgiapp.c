@@ -9,12 +9,12 @@ int main(int argc, char **argv)
     struct app* app = create_app(argc, argv);
     if (app->init) {
         result = app->init(app->data);
-        if (!result) return result;
+        if (result) return result;
     }
 
     while(FCGX_Accept_r(&request) == 0) {
         result = app->process(app->data, &request);
-        if (!result) break;
+        if (result) break;
     }
     if (app->done) app->done(app->data);
     return result;

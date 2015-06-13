@@ -9,6 +9,8 @@ install:
 before_script:
   - s/script-dependencies
 script:
+  - s/build
+  - s/runtests
   - s/runtests
 os:
   - linux

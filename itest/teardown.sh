@@ -1,7 +1,6 @@
 #!/bin/bash
-set -e
 
-[ -n $ITEST_PREFIX ] || ITEST_PREFIX=/tmp/itest
+[ -n "$ITEST_PREFIX" ] || ITEST_PREFIX=/tmp/itest
 
 kill_service() {
 if [ -s $1.pid ]; then

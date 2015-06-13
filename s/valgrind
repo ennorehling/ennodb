@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+make -k
+
+valgrind --error-exitcode=1 --leak-check=no ./tests
+valgrind --error-exitcode=1 --leak-check=full --show-reachable=yes ./ennodb -v
