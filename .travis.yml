@@ -7,8 +7,8 @@ before_install:
 install:
   - s/install-dependencies
 before_script:
-  - s/travis-build
   - s/script-dependencies
+  - s/travis-build
 script:
   - s/build
   - s/runtests

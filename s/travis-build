@@ -1,11 +1,8 @@
 #!/bin/bash
-#set -e
+set -e
 
 EXPECT="nginx version: nginx/1.2.1"
-which nginx
-sudo which nginx
 VERSION=$(/usr/sbin/nginx -v 2>&1)
-echo "detected $VERSION"
 
 if [ "$VERSION" != "$EXPECT" ] ; then
   echo "unknown $VERSION"
