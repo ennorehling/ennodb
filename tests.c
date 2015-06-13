@@ -104,6 +104,20 @@ static void test_empty_log(CuTest *tc) {
     _unlink(binlog);
 }
 
+static void test_same_prefix(CuTest *tc) {
+    db_table tbl = { { 0 }, 0 };
+    db_entry cur = mk_entry("<img src='http://placekitten.com/g/200/300' />"), result;
+    
+    _unlink(binlog);
+    set_key(&tbl, "cat", &cur);
+    set_key(&tbl, "catz", &cur);
+    CuAssertIntEquals(tc, 200, get_key(&tbl, "catz", &result));
+    CuAssertStrEquals(tc, (const char *)result.data, (const char *)cur.data);
+    memset(&result, 0, sizeof(result));
+    CuAssertIntEquals(tc, 200, get_key(&tbl, "cat", &result));
+    CuAssertStrEquals(tc, (const char *)cur.data, (const char *)result.data);
+}
+
 void add_suite_critbit(CuSuite *suite);
 
 int main(void) {
@@ -117,6 +131,7 @@ int main(void) {
     SUITE_ADD_TEST(suite, test_replay_log);
     SUITE_ADD_TEST(suite, test_empty_log);
     SUITE_ADD_TEST(suite, test_replay_log_multi);
+    SUITE_ADD_TEST(suite, test_same_prefix);
 
     CuSuiteRun(suite);
     CuSuiteSummary(suite, output);
