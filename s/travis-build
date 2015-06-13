@@ -17,4 +17,4 @@ for dir in $nginx_dirs ; do
     sudo mkdir -p $dir
   fi
   sudo chmod 777 $dir
-fi
+done
