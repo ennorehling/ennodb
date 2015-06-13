@@ -2,7 +2,7 @@
 set -e
 
 ROOT=`pwd`
-[ -n $ITEST_PREFIX ] || ITEST_PREFIX=/tmp/itest
+[ -n "$ITEST_PREFIX" ] || ITEST_PREFIX=/tmp/itest
 
 make ennodb
 mkdir -p ${ITEST_PREFIX}/nginx

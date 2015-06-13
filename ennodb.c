@@ -145,12 +145,11 @@ static int process(void *self, FCGX_Request *req)
 
 static void reload_config(void) {
     dictionary *ini = iniparser_new(inifile);
-    ini = iniparser_new(inifile);
     if (ini) {
         const char *str;
         readonly = iniparser_getint(ini, "ennodb:readonly", 0);
         str = iniparser_getstr(ini, "ennodb:database");
-        if (str && strcmp(binlog, str)!=0) {
+        if (str && (!binlog || strcmp(binlog, str)!=0)) {
             binlog = str;
             cycle_log = 1;
         }
