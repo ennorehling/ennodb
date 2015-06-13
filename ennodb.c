@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <critbit.h>
 
-#define VERSION "1.1"
+#define VERSION "1.2"
 
 static const char * binlog = NULL;
 
