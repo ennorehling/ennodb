@@ -11,5 +11,4 @@ fi
 }
 
 # c_tap
-echo "building project"
-make -k && make test
+s/runtests

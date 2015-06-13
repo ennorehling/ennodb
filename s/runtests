@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+make -k
+make test
+for test in itest/*.test ; do
+	$test
+done

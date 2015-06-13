@@ -9,6 +9,8 @@
 #include <assert.h>
 #include <critbit.h>
 
+#define VERSION "1.0"
+
 static const char * binlog = "binlog";
 
 static const char * get_prefix(const char *path) {
@@ -144,9 +146,26 @@ static void signal_handler(int sig) {
     }
 }
 
+static void print_version() {
+    printf("EnnoDB %s\nCopyright (C) 2015 Enno Rehling.\n", VERSION);
+}
+
 struct app * create_app(int argc, char **argv) {
     if (argc>1) {
-        binlog = argv[1];
+        int i;
+        for (i=1; i!=argc;++i) {
+            if (argv[i][0]=='-') {
+                char opt = argv[i][1];
+                switch (opt) {
+                case 'v':
+                    print_version();
+                    break;
+                }
+            }
+            else {
+                binlog = argv[i];
+            }
+        }
     }
     myapp.data = calloc(1, sizeof(db_table));
     return &myapp;

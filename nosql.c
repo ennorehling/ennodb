@@ -121,7 +121,7 @@ int read_log(db_table *pl, const char *logfile) {
                     result = -1;
                 }
                 else {
-                    printf("reading %u bytes from binlogs\n", (unsigned)fsize);
+                    printf("reading %u bytes from %s\n", (unsigned)fsize, logfile);
                     while (data - fsize < (const char *)logdata) {
                         db_entry entry;
                         const char *key;

@@ -1,0 +1,6 @@
+#!/bin/sh
+output=`./ennodb -v`
+if [ ! -n "$output" ]; then
+  echo "ERROR: expected version information"
+  exit 1
+fi
