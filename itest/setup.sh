@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-/usr/sbin/nginx -v
-
 ROOT=`pwd`
 [ -n $ITEST_PREFIX ] || ITEST_PREFIX=/tmp/itest
 
