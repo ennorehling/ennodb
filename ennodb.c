@@ -11,7 +11,7 @@
 
 #define VERSION "1.0"
 
-static const char * binlog = "binlog";
+static const char * binlog = NULL;
 
 static const char * get_prefix(const char *path) {
     const char * result = strrchr(path, '/');
@@ -53,7 +53,9 @@ static int http_invalid_method(FCGX_Stream *out, const char *body) {
 
 static void done(void *self) {
     db_table *pl = (db_table *)self;
-    fclose(pl->binlog);
+    if (pl->binlog) {
+        fclose(pl->binlog);
+    }
     free(self);
 }
 
@@ -62,6 +64,7 @@ static void signal_handler(int sig);
 static int init(void * self)
 {
     db_table *pl = (db_table *)self;
+    if (!binlog) return 1;
     if (read_log(pl, binlog) < 0) {
         printf("could not read %s, aborting.\n", binlog);
         abort();

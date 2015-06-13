@@ -9,5 +9,6 @@ make test
 itest/setup.sh
 for test in itest/*.test ; do
 	$test
+    [ -e binlog ] && echo "$test creates binlog"
 done
 itest/teardown.sh
