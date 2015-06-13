@@ -1,14 +1,17 @@
 #!/bin/bash
-set -e
+#set -e
 
 EXPECT="nginx version: nginx/1.2.1"
+which nginx
+sudo which nginx
 VERSION=$(/usr/sbin/nginx -v 2>&1)
+echo "detected $VERSION"
 
 if [ "$VERSION" != "$EXPECT" ] ; then
   echo "unknown $VERSION"
-  if [ ! -d /var/log/nginx/ ]; then
+  if [ ! -d /var/log/nginx ]; then
     echo "Creating /var/log/nginx/"
-    sudo mkdir /var/log/nginx/
-    sudo chmod 777 /var/log/nginx/
+    sudo mkdir -p /var/log/nginx
+    sudo chmod 777 /var/log/nginx
   fi
 fi
