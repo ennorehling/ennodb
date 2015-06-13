@@ -1,3 +1,6 @@
 [submodule "critbit"]
 	path = critbit
 	url = https://github.com/badgerman/critbit.git
+[submodule "iniparser"]
+	path = iniparser
+	url = https://github.com/badgerman/iniparser.git
