@@ -81,7 +81,9 @@ void set_key(db_table *pl, const char *key, db_entry *entry) {
 }
 
 int close_log(db_table *pl) {
-    return fclose(pl->binlog);
+    int result = fclose(pl->binlog);
+    pl->binlog = 0;
+    return result;
 }
 
 int open_log(db_table *pl, const char *logfile) {
@@ -144,12 +146,17 @@ int read_log(db_table *pl, const char *logfile) {
                 }
 #ifdef WIN32
                 UnmapViewOfFile(logdata);
+                CloseHandle(fm);
 #else
                 munmap(logdata, (size_t)fsize);
 #endif
                 result = version;
             }
         }
+        result = _close(fd);
+    }
+    else {
+        perror(logfile);
     }
     return result;
 }

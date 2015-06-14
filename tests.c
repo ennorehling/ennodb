@@ -13,7 +13,7 @@
 #define _unlink(s) unlink(s)
 #endif
 
-static const char *binlog = "binlog.test";
+static const char *binlog = "binlog.db";
 
 static db_entry mk_entry(const char *str) {
     db_entry ret;
@@ -65,11 +65,11 @@ static void test_replay_log_multi(CuTest *tc) {
     set_key(&tbl, "hodor", &cur);
     cur = mk_entry("NOPE!");
     set_key(&tbl, "hodor", &cur);
-    fclose(tbl.binlog);
-    tbl.binlog = 0;
+    CuAssertIntEquals(tc, 0, close_log(&tbl));
     cb_clear(&tbl.trie);
-    read_log(&tbl, binlog);
-    _unlink(binlog);
+    CuAssertIntEquals(tc, 0, read_log(&tbl, binlog));
+
+    CuAssertIntEquals(tc, 0, _unlink(binlog));
     memset(&cur, 0, sizeof(cur));
     CuAssertIntEquals(tc, 200, get_key(&tbl, "hodor", &cur));
     CuAssertStrEquals(tc, "NOPE!", cur.data);
@@ -79,14 +79,14 @@ static void test_replay_log(CuTest *tc) {
     db_table tbl = { { 0 }, 0 };
     db_entry cur = mk_entry("HODOR");
 
-    _unlink(binlog);
+    if (_unlink(binlog) != 0) perror(binlog);
     open_log(&tbl, binlog);
     set_key(&tbl, "hodor", &cur);
-    fclose(tbl.binlog);
-    tbl.binlog = 0;
+    CuAssertIntEquals(tc, 0, close_log(&tbl));
     cb_clear(&tbl.trie);
     read_log(&tbl, binlog);
-    _unlink(binlog);
+
+    CuAssertIntEquals(tc, 0, _unlink(binlog));
     memset(&cur, 0, sizeof(cur));
     CuAssertIntEquals(tc, 200, get_key(&tbl, "hodor", &cur));
     CuAssertStrEquals(tc, "HODOR", (const char *)cur.data);
@@ -95,13 +95,14 @@ static void test_replay_log(CuTest *tc) {
 static void test_empty_log(CuTest *tc) {
     db_table tbl = { { 0 }, 0 };
     FILE *F;
+    const char *logname = "empty.db";
 
-    _unlink(binlog);
-    F = fopen(binlog, "w");
+    _unlink(logname);
+    F = fopen(logname, "w");
     fclose(F);
     cb_clear(&tbl.trie);
-    CuAssertIntEquals(tc, 0, read_log(&tbl, binlog));
-    _unlink(binlog);
+    CuAssertIntEquals(tc, 0, read_log(&tbl, logname));
+    CuAssertIntEquals(tc, 0, _unlink(logname));
 }
 
 static void test_same_prefix(CuTest *tc) {
