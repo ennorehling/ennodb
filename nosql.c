@@ -16,6 +16,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #define _open(filename, oflag) open(filename, oflag)
+#define _close(fd) close(fd)
 #define _lseek(fd, offset, origin) lseek(fd, offset, origin)
 #endif
 

@@ -4,7 +4,6 @@
 
 ## Changes with EnnoDB 1.1 (13 Jun 2015)
 
-* fixed a bug with keys that are a prefix of each other (issue #8)
 * added version numbers (issue #10)
 * removed the default logfile name (issue #11)
 
