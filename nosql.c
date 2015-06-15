@@ -62,7 +62,8 @@ static void set_key_i(db_table *pl, const char *key, size_t len, db_entry *entry
     }
     result = cb_find_prefix(&pl->trie, key, len + 1, matches, 2, 0);
     if (result > 0) {
-        db_entry *match = (db_entry *)*matches;
+        db_entry *match;
+        cb_get_kv_ex(matches[0], &match);
         if (match->size == entry->size && memcmp(match->data, entry->data, entry->size) == 0) {
             return;
         }

@@ -1,3 +1,8 @@
+## Changes with EnnoDB 1.3 (14 Jun 2015)
+
+* close all opened file handles (issue #12)
+* TBD: updating a key causes data loss (issue 8)
+
 ## Changes with EnnoDB 1.2 (13 Jun 2015)
 
 * added a .ini file, and a readonly mode (issue #2)

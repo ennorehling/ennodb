@@ -46,14 +46,14 @@ static void test_nosql_update(CuTest *tc) {
 static void test_nosql_idempotent(CuTest *tc) {
     db_table tbl = { { 0 }, 0 };
     const char * strings = "HODOR\0HODOR";
-    db_entry cu1 = { 6, (void *)strings };
-    db_entry cu2 = { 6, (void *)(strings+6) };
+    db_entry cu1 = mk_entry(strings);
+    db_entry cu2 = mk_entry(strings + 6);
+    db_entry cur;
     set_key(&tbl, "hodor", &cu1);
     set_key(&tbl, "hodor", &cu2);
-    memset(&cu1, 0, sizeof(cu1));
-    CuAssertIntEquals(tc, 200, get_key(&tbl, "hodor", &cu1));
-    CuAssertStrEquals(tc, (const char *)cu1.data, "HODOR");
-    CuAssertPtrEquals(tc, cu2.data, cu1.data);
+    CuAssertIntEquals(tc, 200, get_key(&tbl, "hodor", &cur));
+    CuAssertStrEquals(tc, (const char *)cur.data, "HODOR");
+    CuAssertPtrEquals(tc, cu1.data, cur.data);
 }
 
 static void test_replay_log_multi(CuTest *tc) {
