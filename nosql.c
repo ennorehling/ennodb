@@ -1,17 +1,19 @@
 #ifdef _MSC_VER
 # define _CRT_SECURE_NO_WARNINGS
 #endif
-#include "nosql.h"
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
+
 #ifdef WIN32
+#pragma warning(push)
+#pragma warning(disable: 4820 4255 4668)
 #include <windows.h>
 #include <io.h>
+#endif
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#ifdef WIN32
+#pragma warning(pop)
 #else
 #include <sys/mman.h>
 #include <unistd.h>
@@ -19,6 +21,14 @@
 #define _close(fd) close(fd)
 #define _lseek(fd, offset, origin) lseek(fd, offset, origin)
 #endif
+
+#include <assert.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
+
+#include "nosql.h"
 
 static const char * id4 = "ENNO"; /* file magic: 0x4f4e4e45 */
 
@@ -63,8 +73,10 @@ static void set_key_i(db_table *pl, const char *key, size_t len, db_entry *entry
     }
     result = cb_find_prefix(&pl->trie, key, len + 1, matches, 2, 0);
     if (result > 0) {
+        void *ptr;
         db_entry *match;
-        cb_get_kv_ex(matches[0], &match);
+        cb_get_kv_ex(matches[0], &ptr);
+        match = (db_entry *)ptr;
         if (match->size == entry->size && memcmp(match->data, entry->data, entry->size) == 0) {
             return;
         }
