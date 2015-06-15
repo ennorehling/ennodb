@@ -79,7 +79,7 @@ static void test_replay_log(CuTest *tc) {
     db_table tbl = { { 0 }, 0 };
     db_entry cur = mk_entry("HODOR");
 
-    if (_unlink(binlog) != 0) perror(binlog);
+    _unlink(binlog);
     open_log(&tbl, binlog);
     set_key(&tbl, "hodor", &cur);
     CuAssertIntEquals(tc, 0, close_log(&tbl));
