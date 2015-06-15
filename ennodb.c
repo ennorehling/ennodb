@@ -8,8 +8,15 @@
 #include <signal.h>
 #include <assert.h>
 #include <critbit.h>
+#include <iniparser.h>
 
-static const char * binlog = "binlog";
+#define VERSION "1.3"
+
+static const char * binlog = NULL;
+static const char *inifile = "ennodb.ini";
+static dictionary *config;
+static int readonly = 0;
+static int cycle_log = 0;
 
 static const char * get_prefix(const char *path) {
     const char * result = strrchr(path, '/');
@@ -51,7 +58,9 @@ static int http_invalid_method(FCGX_Stream *out, const char *body) {
 
 static void done(void *self) {
     db_table *pl = (db_table *)self;
-    fclose(pl->binlog);
+    if (pl->binlog) {
+        fclose(pl->binlog);
+    }
     free(self);
 }
 
@@ -60,6 +69,7 @@ static void signal_handler(int sig);
 static int init(void * self)
 {
     db_table *pl = (db_table *)self;
+    if (!binlog) return 1;
     if (read_log(pl, binlog) < 0) {
         printf("could not read %s, aborting.\n", binlog);
         abort();
@@ -79,6 +89,12 @@ static int process(void *self, FCGX_Request *req)
     db_table *pl = (db_table *)self;
     assert(self && req);
 
+    if (cycle_log) {
+        close_log(pl);
+        open_log(pl, binlog);
+        cycle_log = 0;
+    }
+    
     method = FCGX_GetParam("REQUEST_METHOD", req->envp);
     script = FCGX_GetParam("PATH_INFO", req->envp);
     prefix = get_prefix(script);
@@ -86,7 +102,7 @@ static int process(void *self, FCGX_Request *req)
     printf("%s request for %s\n", method, prefix);
 
     if (!method || !prefix) {
-        http_invalid_method(req->out, "");
+        http_invalid_method(req->out, NULL);
         return -1;
     }
     if (strcmp(method, "GET")==0) {
@@ -95,16 +111,16 @@ static int process(void *self, FCGX_Request *req)
             http_success(req->out, &entry);
         }
         else {
-            http_not_found(req->out, "");
+            http_not_found(req->out, NULL);
         }
 
     }
-    else if (strcmp(method, "POST")==0) {
+    else if (!readonly && strcmp(method, "POST")==0) {
         char buffer[MAXENTRY];
         db_entry entry;
         size_t size = sizeof(buffer), len = 0;
-    
-        for (char *b = buffer; size; ) {
+        char *b;
+        for (b = buffer; size; ) {
             int result = FCGX_GetStr(b, (int)size, req->in);
             if (result > 0) {
                 size_t bytes = (size_t)result;
@@ -122,10 +138,26 @@ static int process(void *self, FCGX_Request *req)
         http_success(req->out, NULL);
     }
     else {
-        // invalid method
-        http_not_found(req->out, NULL);
+        http_invalid_method(req->out, NULL);
     }
     return 0;
+}
+
+static void reload_config(void) {
+    dictionary *ini = iniparser_new(inifile);
+    if (ini) {
+        const char *str;
+        readonly = iniparser_getint(ini, "ennodb:readonly", 0);
+        str = iniparser_getstr(ini, "ennodb:database");
+        if (str && (!binlog || strcmp(binlog, str)!=0)) {
+            binlog = str;
+            cycle_log = 1;
+        }
+        if (config) {
+            iniparser_free(config);
+        }
+        config = ini;
+    }
 }
 
 static struct app myapp = {
@@ -141,13 +173,32 @@ static void signal_handler(int sig) {
     if (sig==SIGHUP) {
         printf("received SIGHUP\n");
         fflush(((db_table *)myapp.data)->binlog);
+        reload_config();
     }
+}
+
+static void print_version() {
+    printf("EnnoDB %s\nCopyright (C) 2015 Enno Rehling.\n", VERSION);
 }
 
 struct app * create_app(int argc, char **argv) {
     if (argc>1) {
-        binlog = argv[1];
+        int i;
+        for (i=1; i!=argc;++i) {
+            if (argv[i][0]=='-') {
+                char opt = argv[i][1];
+                switch (opt) {
+                case 'v':
+                    print_version();
+                    break;
+                }
+            }
+            else {
+                inifile = argv[i];
+            }
+        }
     }
+    reload_config();
     myapp.data = calloc(1, sizeof(db_table));
     return &myapp;
 }

@@ -1,15 +1,20 @@
 #!/bin/bash
 set -e
 
-function c_tap() {
-if [ "" = "`which runtests`" ]; then
-echo "installing prerequisites"
-cd c-tap-harness && ./autogen && ./configure --prefix $OLDPWD/opt && make install
-cd ..
-export PATH=$PATH:$PWD/opt/bin
-fi
-}
+nginx_dirs=""
 
-# c_tap
-echo "building project"
-make -k && make test
+EXPECT="nginx version: nginx/1.2.1"
+VERSION=$(/usr/sbin/nginx -v 2>&1)
+
+if [ "$VERSION" != "$EXPECT" ] ; then
+  echo "unknown $VERSION"
+  nginx_dirs="/var/lib/nginx/ /var/log/nginx/"
+fi
+
+for dir in $nginx_dirs ; do
+  if [ ! -d $dir ]; then
+    echo "Creating $dir"
+    sudo mkdir -p $dir
+  fi
+  sudo chmod 777 $dir
+done

@@ -1,23 +1,34 @@
 #ifdef _MSC_VER
 # define _CRT_SECURE_NO_WARNINGS
 #endif
-#include "nosql.h"
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
+
 #ifdef WIN32
+#pragma warning(push)
+#pragma warning(disable: 4820 4255 4668)
 #include <windows.h>
 #include <io.h>
+#endif
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#ifdef WIN32
+#pragma warning(pop)
 #else
 #include <sys/mman.h>
 #include <unistd.h>
 #define _open(filename, oflag) open(filename, oflag)
+#define _close(fd) close(fd)
 #define _lseek(fd, offset, origin) lseek(fd, offset, origin)
 #endif
+
+#include <assert.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
+
+#include "nosql.h"
 
 static const char * id4 = "ENNO"; /* file magic: 0x4f4e4e45 */
 
@@ -26,7 +37,7 @@ static const char * id4 = "ENNO"; /* file magic: 0x4f4e4e45 */
 #define MIN_VERSION ID4_VERSION
 
 int get_key(db_table *pl, const char *key, db_entry *entry) {
-    const void *matches[2];
+    void *matches[2];
     int result;
 
     assert(pl && key && entry);
@@ -49,7 +60,7 @@ static void insert_key(critbit_tree *trie, const char *key, size_t keylen, db_en
 }
 
 static void set_key_i(db_table *pl, const char *key, size_t len, db_entry *entry) {
-    const void *matches[2];
+    void *matches[2];
     int result;
 
     if (pl->binlog) {
@@ -62,7 +73,10 @@ static void set_key_i(db_table *pl, const char *key, size_t len, db_entry *entry
     }
     result = cb_find_prefix(&pl->trie, key, len + 1, matches, 2, 0);
     if (result > 0) {
-        db_entry *match = (db_entry *)*matches;
+        void *ptr;
+        db_entry *match;
+        cb_get_kv_ex(matches[0], &ptr);
+        match = (db_entry *)ptr;
         if (match->size == entry->size && memcmp(match->data, entry->data, entry->size) == 0) {
             return;
         }
@@ -78,6 +92,12 @@ static void set_key_i(db_table *pl, const char *key, size_t len, db_entry *entry
 void set_key(db_table *pl, const char *key, db_entry *entry) {
     size_t len = strlen(key);
     set_key_i(pl, key, len, entry);
+}
+
+int close_log(db_table *pl) {
+    int result = fclose(pl->binlog);
+    pl->binlog = 0;
+    return result;
 }
 
 int open_log(db_table *pl, const char *logfile) {
@@ -121,7 +141,7 @@ int read_log(db_table *pl, const char *logfile) {
                     result = -1;
                 }
                 else {
-                    printf("reading %u bytes from binlogs\n", (unsigned)fsize);
+                    printf("reading %u bytes from %s\n", (unsigned)fsize, logfile);
                     while (data - fsize < (const char *)logdata) {
                         db_entry entry;
                         const char *key;
@@ -140,12 +160,17 @@ int read_log(db_table *pl, const char *logfile) {
                 }
 #ifdef WIN32
                 UnmapViewOfFile(logdata);
+                CloseHandle(fm);
 #else
                 munmap(logdata, (size_t)fsize);
 #endif
                 result = version;
             }
         }
+        result = _close(fd);
+    }
+    else {
+        perror(logfile);
     }
     return result;
 }

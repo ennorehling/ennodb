@@ -2,10 +2,17 @@ language: c
 compiler:
   - gcc
   - clang
-script: s/travis-build
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libfcgi-dev autotools-dev
+install:
+  - s/install-dependencies
+before_script:
+  - s/script-dependencies
+  - s/travis-build
+script:
+  - s/build
+  - s/runtests
+  - s/runtests
 os:
   - linux
   - osx
