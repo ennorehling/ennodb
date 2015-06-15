@@ -37,7 +37,7 @@ static const char * id4 = "ENNO"; /* file magic: 0x4f4e4e45 */
 #define MIN_VERSION ID4_VERSION
 
 int get_key(db_table *pl, const char *key, db_entry *entry) {
-    const void *matches[2];
+    void *matches[2];
     int result;
 
     assert(pl && key && entry);
@@ -60,7 +60,7 @@ static void insert_key(critbit_tree *trie, const char *key, size_t keylen, db_en
 }
 
 static void set_key_i(db_table *pl, const char *key, size_t len, db_entry *entry) {
-    const void *matches[2];
+    void *matches[2];
     int result;
 
     if (pl->binlog) {
