@@ -10,7 +10,7 @@
 #include <critbit.h>
 #include <iniparser.h>
 
-#define VERSION "1.3"
+#define VERSION "1.4"
 
 static const char * binlog = NULL;
 static const char *inifile = "ennodb.ini";
@@ -83,6 +83,41 @@ static int init(void * self)
     return 0;
 }
 
+static int db_get(FCGX_Request *req, db_table *pl, const char *prefix) {
+    db_entry entry;
+    if (get_key(pl, prefix, &entry)==200) {
+        http_success(req->out, &entry);
+    }
+    else {
+        http_not_found(req->out, NULL);
+    }
+    return 0;
+}
+
+static int db_post(FCGX_Request *req, db_table *pl, const char *prefix) {
+    char buffer[MAXENTRY];
+    db_entry entry;
+    size_t size = sizeof(buffer), len = 0;
+    char *b;
+    for (b = buffer; size; ) {
+        int result = FCGX_GetStr(b, (int)size, req->in);
+        if (result > 0) {
+            size_t bytes = (size_t)result;
+            b+=bytes;
+            size-=bytes;
+            len+=bytes;
+        } else {
+            break;
+        }
+    }
+    entry.size = len;
+    entry.data = malloc(len);
+    memcpy(entry.data, buffer, len);
+    set_key(pl, prefix, &entry);
+    http_success(req->out, NULL);
+    return 0;
+}
+
 static int process(void *self, FCGX_Request *req)
 {
     const char *script, *prefix, *method;
@@ -105,40 +140,32 @@ static int process(void *self, FCGX_Request *req)
         http_invalid_method(req->out, NULL);
         return -1;
     }
-    if (strcmp(method, "GET")==0) {
-        db_entry entry;
-        if (get_key(pl, prefix, &entry)==200) {
-            http_success(req->out, &entry);
+    
+    if (strstr(script, "debug")) {
+        // TODO: remove this HACK!
+        char body[2048];
+        snprintf(body, sizeof(body), "script: %s\nmethod: %s\nprefix: %s\n", script, method, prefix);
+        http_response(req->out, 200, "OK", body, strlen(body));
+        return 0;
+    }
+    if (script[0]!='/' || script[2]!='/' || script+3!=prefix) {
+        http_not_found(req->out, NULL);
+        return 0;
+    }
+    switch (script[1]) {
+    case 'k':
+        if (strcmp(method, "GET")==0) {
+            return db_get(req, pl, prefix);
+        }
+        else if (!readonly && strcmp(method, "POST")==0) {
+            return db_post(req, pl, prefix);
         }
         else {
-            http_not_found(req->out, NULL);
+            http_invalid_method(req->out, NULL);
         }
-
-    }
-    else if (!readonly && strcmp(method, "POST")==0) {
-        char buffer[MAXENTRY];
-        db_entry entry;
-        size_t size = sizeof(buffer), len = 0;
-        char *b;
-        for (b = buffer; size; ) {
-            int result = FCGX_GetStr(b, (int)size, req->in);
-            if (result > 0) {
-                size_t bytes = (size_t)result;
-                b+=bytes;
-                size-=bytes;
-                len+=bytes;
-            } else {
-                break;
-            }
-        }
-        entry.size = len;
-        entry.data = malloc(len);
-        memcpy(entry.data, buffer, len);
-        set_key(pl, prefix, &entry);
-        http_success(req->out, NULL);
-    }
-    else {
-        http_invalid_method(req->out, NULL);
+        break;
+    default:
+        break;
     }
     return 0;
 }
