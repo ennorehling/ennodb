@@ -1,3 +1,8 @@
+## Changes with EnnoDB 1.4 (19 Jun 2015)
+
+* moved all keys under the /k/ endpoint
+* add /l/ endpoint to list keys by prefix
+
 ## Changes with EnnoDB 1.3 (14 Jun 2015)
 
 * close all opened file handles (issue #12)
