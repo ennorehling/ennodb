@@ -18,6 +18,8 @@ static dictionary *config;
 static int readonly = 0;
 static int cycle_log = 0;
 
+#define _min(a, b) (((a) < (b)) ? (a) : (b))
+
 static const char * get_prefix(const char *path) {
     const char * result = strrchr(path, '/');
     return result ? result+1 : 0;
@@ -124,26 +126,33 @@ static int list_keys(FCGX_Request *req, db_table *pl, const char *key) {
     int total = 0, result;
     char body[4096];
     char * b = body;
-    size_t len = sizeof(body);
+    size_t len = sizeof(body)-1;
 
     do {
         result = cb_find_prefix(&pl->trie, key, strlen(key), matches, BATCH, total);
         if (result>1) {
             int i;
             for (i=0; i!=result; ++i) {
-                const char *k, *v;
                 size_t bytes;
                 db_entry entry;
                 cb_get_kv(matches[i], &entry, sizeof(db_entry));
-                k = (const char *)matches[i];
-                v = (const char *)entry.data;
-                bytes = snprintf(b, len, "%s: %s\n", k, v);
+                bytes = snprintf(b, len, "%s: ", (const char *)matches[i]);
                 len -= bytes;
                 b += bytes;
+                bytes = _min(len, entry.size);
+                memcpy(b, entry.data, bytes);
+                len -= bytes;
+                b += bytes;
+                if (len>0) {
+                    b[0] = '\n';
+                    ++b;
+                    --len;
+                }
             }
             total += result;
         }
     } while (result==BATCH);
+    b[0]=0;
     printf("found %d matches for prefix %s\n", total, key);
     if (total>0) {
         http_response(req->out, 200, "OK", body, strlen(body));
