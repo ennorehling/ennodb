@@ -52,6 +52,14 @@ try it!
     # retrieve the value for key "foo":
     curl http://localhost/ennodb/foo
 
-If this prints "Hello World", then you've done it. Alternatively, open
-http://your.host.name/keyval.html in your browser and fiddle around
-with it.
+If this prints "Hello World", then you've done it. 
+
+Alternatively, install the sample web applications by linking them
+from your web server's root directory. Depending on your distribution
+or web server configuration, this may be in /usr/share/nginx/www or
+not. 
+
+    sudo ln -sf /opt/share/ennodb/www/* /usr/share/nginx/www
+
+Now open http://your.host.name/keyval.html in your browser and fiddle
+around with it to see the database service in action.
