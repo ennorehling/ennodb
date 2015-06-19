@@ -140,8 +140,8 @@ static int list_keys(FCGX_Request *req, db_table *pl, const char *key) {
                 bytes = snprintf(b, len, "%s: %s\n", k, v);
                 len -= bytes;
                 b += bytes;
-                total += result;
             }
+            total += result;
         }
     } while (result==BATCH);
     printf("found %d matches for prefix %s\n", total, key);
