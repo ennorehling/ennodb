@@ -118,6 +118,41 @@ static int db_post(FCGX_Request *req, db_table *pl, const char *prefix) {
     return 0;
 }
 
+static int list_keys(FCGX_Request *req, db_table *pl, const char *key) {
+#define BATCH 16
+    void *matches[BATCH];
+    int total = 0, result;
+    char body[4096];
+    char * b = body;
+    size_t len = sizeof(body);
+
+    do {
+        result = cb_find_prefix(&pl->trie, key, strlen(key), matches, BATCH, total);
+        if (result>1) {
+            int i;
+            for (i=0; i!=result; ++i) {
+                const char *k, *v;
+                size_t bytes;
+                db_entry entry;
+                cb_get_kv(matches[i], &entry, sizeof(db_entry));
+                k = (const char *)matches[i];
+                v = (const char *)entry.data;
+                bytes = snprintf(b, len, "%s: %s\n", k, v);
+                len -= bytes;
+                b += bytes;
+            }
+            total += result;
+        }
+    } while (result==BATCH);
+    printf("found %d matches for prefix %s\n", total, key);
+    if (total>0) {
+        http_response(req->out, 200, "OK", body, strlen(body));
+    } else {
+        http_not_found(req->out, NULL);
+    }
+    return 0;
+}
+
 static int process(void *self, FCGX_Request *req)
 {
     const char *script, *prefix, *method;
@@ -164,6 +199,8 @@ static int process(void *self, FCGX_Request *req)
             http_invalid_method(req->out, NULL);
         }
         break;
+    case 'l':
+        return list_keys(req, pl, prefix);
     default:
         break;
     }

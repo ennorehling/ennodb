@@ -1,0 +1,13 @@
+#!/bin/sh
+
+rm -f itest/ass
+ADDRESS="$ITEST_HOST:$ITEST_PORT"
+URL="http://$ADDRESS/ennodb"
+curl -s --data '<img src="http://placekitten.com/g/200/400/" />' $URL/k/assinine
+curl -s --data '<img src="http://placekitten.com/g/240/300/" />' $URL/k/assyrian
+curl -s --data '<img src="http://placekitten.com/g/200/300/" />' $URL/k/assembly
+lines=`curl -s $URL/l/ass | wc -l`
+if [ ! $lines -eq 3 ]; then
+  echo "ERROR: expected three values for 'l/ass', got $lines"
+  exit 1
+fi
