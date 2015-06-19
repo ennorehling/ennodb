@@ -120,13 +120,13 @@ static int db_post(FCGX_Request *req, db_table *pl, const char *prefix) {
     return 0;
 }
 
-static int list_keys(FCGX_Request *req, db_table *pl, const char *key) {
+static int write_keys(db_table *pl, const char *key, char *body, size_t size) {
 #define BATCH 16
+    size_t len = size-1;
     void *matches[BATCH];
     int total = 0, result;
-    char body[4096];
     char * b = body;
-    size_t len = sizeof(body)-1;
+
 
     do {
         result = cb_find_prefix(&pl->trie, key, strlen(key), matches, BATCH, total);
@@ -153,6 +153,14 @@ static int list_keys(FCGX_Request *req, db_table *pl, const char *key) {
         }
     } while (result==BATCH);
     b[0]=0;
+    return total;
+}
+
+static int list_keys(FCGX_Request *req, db_table *pl, const char *key) {
+    char body[4096]; // TODO: this limit is unnecessary.
+    int total;
+
+    total = write_keys(pl, key, body, sizeof(body));
     printf("found %d matches for prefix %s\n", total, key);
     if (total>0) {
         http_response(req->out, 200, "OK", body, strlen(body));
