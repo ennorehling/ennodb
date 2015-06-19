@@ -1,11 +1,11 @@
 #!/bin/sh
 
-ADDRESS=$ITEST_HOST:$ITEST_PORT
-
-curl -s --data '<img src="http://placekitten.com/g/240/300/" />' http://$ADDRESS/ennodb/cat
-curl -s --data '<img src="http://placekitten.com/g/200/300/" />' http://$ADDRESS/ennodb/catz
-curl -s --data '<img src="http://placekitten.com/g/200/400/" />' http://$ADDRESS/ennodb/catz
-output=`curl -s http://$ADDRESS/ennodb/cat`
+ADDRESS="$ITEST_HOST:$ITEST_PORT"
+URL="http://$ADDRESS/ennodb/k"
+curl -s --data '<img src="http://placekitten.com/g/240/300/" />' $URL/cat
+curl -s --data '<img src="http://placekitten.com/g/200/300/" />' $URL/catz
+curl -s --data '<img src="http://placekitten.com/g/200/400/" />' $URL/catz
+output=`curl -s $URL/cat`
 if [ ! -n "$output" ]; then
   echo "ERROR: expected a value for 'cat'"
   exit 1
