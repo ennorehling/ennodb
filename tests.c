@@ -15,9 +15,20 @@
 
 static const char *binlog = "binlog.db";
 
+static char * get_value(db_entry *cur, char *buffer, size_t size) {
+	if (size > cur->size + 1) {
+		memcpy(buffer, cur->data, cur->size);
+		buffer[cur->size] = 0;
+	}
+	else {
+		buffer[0] = 0;
+	}
+	return buffer;
+}
+
 static db_entry mk_entry(const char *str) {
     db_entry ret;
-    ret.size = strlen(str)+1;
+    ret.size = strlen(str);
     ret.data = (void*)str;
     return ret;
 }
@@ -59,6 +70,7 @@ static void test_nosql_idempotent(CuTest *tc) {
 static void test_replay_log_multi(CuTest *tc) {
     db_table tbl = { { 0 }, 0 };
     db_entry cur = mk_entry("HODOR");
+	char buffer[32];
 
     _unlink(binlog);
     open_log(&tbl, binlog);
@@ -72,12 +84,13 @@ static void test_replay_log_multi(CuTest *tc) {
     CuAssertIntEquals(tc, 0, _unlink(binlog));
     memset(&cur, 0, sizeof(cur));
     CuAssertIntEquals(tc, 200, get_key(&tbl, "hodor", &cur));
-    CuAssertStrEquals(tc, "NOPE!", cur.data);
+	CuAssertStrEquals(tc, "NOPE!", get_value(&cur, buffer, sizeof(buffer)));
 }
 
 static void test_replay_log(CuTest *tc) {
     db_table tbl = { { 0 }, 0 };
     db_entry cur = mk_entry("HODOR");
+	char buffer[64];
 
     _unlink(binlog);
     open_log(&tbl, binlog);
@@ -89,7 +102,7 @@ static void test_replay_log(CuTest *tc) {
     CuAssertIntEquals(tc, 0, _unlink(binlog));
     memset(&cur, 0, sizeof(cur));
     CuAssertIntEquals(tc, 200, get_key(&tbl, "hodor", &cur));
-    CuAssertStrEquals(tc, "HODOR", (const char *)cur.data);
+	CuAssertStrEquals(tc, "HODOR", get_value(&cur, buffer, sizeof(buffer)));
 }
 
 static void test_empty_log(CuTest *tc) {
@@ -126,15 +139,15 @@ static void test_same_prefix(CuTest *tc) {
 static void test_nosql_list_keys(CuTest *tc) {
 	db_table tbl = { { 0 }, 0 };
 	db_entry c1 = mk_entry("GOOD FOR YOU");
-	db_entry c2 = mk_entry("HODOR");
+	db_entry c2 = mk_entry("HODOR!");
 	char body[128];
 
 	set_key(&tbl, "mayo", &c1);
 	set_key(&tbl, "hodor", &c2);
 	CuAssertIntEquals(tc, 2, list_keys(&tbl, "", body, sizeof(body)));
-	CuAssertStrEquals(tc, "hodor: HODOR\nmayo: GOOD FOR YOU\n", body);
+	CuAssertStrEquals(tc, "hodor: HODOR!\nmayo: GOOD FOR YOU\n", body);
 	CuAssertIntEquals(tc, 1, list_keys(&tbl, "ho", body, sizeof(body)));
-	CuAssertStrEquals(tc, "hodor: HODOR\n", body);
+	CuAssertStrEquals(tc, "hodor: HODOR!\n", body);
 }
 
 void add_suite_critbit(CuSuite *suite);

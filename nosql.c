@@ -58,7 +58,7 @@ int list_keys(db_table *pl, const char *key, char *body, size_t size) {
 				bytes = _snprintf(b, len, "%s: ", (const char *)matches[i]);
 				len -= bytes;
 				b += bytes;
-				bytes = _min(len, entry.size-1);
+				bytes = _min(len, entry.size);
 				memcpy(b, entry.data, bytes);
 				len -= bytes;
 				b += bytes;
