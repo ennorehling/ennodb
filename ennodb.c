@@ -18,8 +18,6 @@ static dictionary *config;
 static int readonly = 0;
 static int cycle_log = 0;
 
-#define _min(a, b) (((a) < (b)) ? (a) : (b))
-
 static const char * get_prefix(const char *path) {
     const char * result = strrchr(path, '/');
     return result ? result+1 : 0;
@@ -120,47 +118,11 @@ static int db_post(FCGX_Request *req, db_table *pl, const char *prefix) {
     return 0;
 }
 
-static int write_keys(db_table *pl, const char *key, char *body, size_t size) {
-#define BATCH 16
-    size_t len = size-1;
-    void *matches[BATCH];
-    int total = 0, result;
-    char * b = body;
-
-
-    do {
-        result = cb_find_prefix(&pl->trie, key, strlen(key), matches, BATCH, total);
-        if (result>1) {
-            int i;
-            for (i=0; i!=result; ++i) {
-                size_t bytes;
-                db_entry entry;
-                cb_get_kv(matches[i], &entry, sizeof(db_entry));
-                bytes = snprintf(b, len, "%s: ", (const char *)matches[i]);
-                len -= bytes;
-                b += bytes;
-                bytes = _min(len, entry.size);
-                memcpy(b, entry.data, bytes);
-                len -= bytes;
-                b += bytes;
-                if (len>0) {
-                    b[0] = '\n';
-                    ++b;
-                    --len;
-                }
-            }
-            total += result;
-        }
-    } while (result==BATCH);
-    b[0]=0;
-    return total;
-}
-
-static int list_keys(FCGX_Request *req, db_table *pl, const char *key) {
+static int db_dump_keys(FCGX_Request *req, db_table *pl, const char *key) {
     char body[4096]; // TODO: this limit is unnecessary.
     int total;
 
-    total = write_keys(pl, key, body, sizeof(body));
+    total = list_keys(pl, key, body, sizeof(body));
     printf("found %d matches for prefix %s\n", total, key);
     if (total>0) {
         http_response(req->out, 200, "OK", body, strlen(body));
@@ -217,7 +179,7 @@ static int process(void *self, FCGX_Request *req)
         }
         break;
     case 'l':
-        return list_keys(req, pl, prefix);
+        return db_dump_keys(req, pl, prefix);
     default:
         break;
     }

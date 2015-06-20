@@ -21,3 +21,5 @@ tests
 # Garbage
 *~
 build/
+Debug/
+*.vcxproj.*

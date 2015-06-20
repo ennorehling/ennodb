@@ -123,6 +123,18 @@ static void test_same_prefix(CuTest *tc) {
     CuAssertStrEquals(tc, (const char *)c1.data, (const char *)result.data);
 }
 
+static void test_nosql_list_keys(CuTest *tc) {
+	db_table tbl = { { 0 }, 0 };
+	db_entry c1 = mk_entry("GOOD FOR YOU");
+	db_entry c2 = mk_entry("HODOR");
+	char body[128];
+
+	set_key(&tbl, "mayo", &c1);
+	set_key(&tbl, "hodor", &c2);
+	CuAssertIntEquals(tc, 2, list_keys(&tbl, "", body, sizeof(body)));
+	CuAssertStrEquals(tc, "hodor: HODOR\nmayo: GOOD FOR YOU\n", body);
+}
+
 void add_suite_critbit(CuSuite *suite);
 
 int main(void) {
@@ -133,7 +145,8 @@ int main(void) {
     SUITE_ADD_TEST(suite, test_nosql_set_get);
     SUITE_ADD_TEST(suite, test_nosql_idempotent);
     SUITE_ADD_TEST(suite, test_nosql_update);
-    SUITE_ADD_TEST(suite, test_replay_log);
+	SUITE_ADD_TEST(suite, test_nosql_list_keys);
+	SUITE_ADD_TEST(suite, test_replay_log);
     SUITE_ADD_TEST(suite, test_empty_log);
     SUITE_ADD_TEST(suite, test_replay_log_multi);
     SUITE_ADD_TEST(suite, test_same_prefix);
