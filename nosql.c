@@ -49,7 +49,7 @@ int list_keys(db_table *pl, const char *key, char *body, size_t size) {
 
 	do {
 		result = cb_find_prefix(&pl->trie, key, strlen(key), matches, BATCH, total);
-		if (result>1) {
+		if (result>=1) {
 			int i;
 			for (i = 0; i != result; ++i) {
 				size_t bytes;

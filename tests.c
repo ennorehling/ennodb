@@ -133,6 +133,8 @@ static void test_nosql_list_keys(CuTest *tc) {
 	set_key(&tbl, "hodor", &c2);
 	CuAssertIntEquals(tc, 2, list_keys(&tbl, "", body, sizeof(body)));
 	CuAssertStrEquals(tc, "hodor: HODOR\nmayo: GOOD FOR YOU\n", body);
+	CuAssertIntEquals(tc, 1, list_keys(&tbl, "ho", body, sizeof(body)));
+	CuAssertStrEquals(tc, "hodor: HODOR\n", body);
 }
 
 void add_suite_critbit(CuSuite *suite);
