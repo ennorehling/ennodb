@@ -23,8 +23,6 @@
 #define _snprintf snprintf
 #endif
 
-#define _min(a, b) (((a) < (b)) ? (a) : (b))
-
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -35,43 +33,85 @@
 
 static const char * id4 = "ENNO"; /* file magic: 0x4f4e4e45 */
 
+#define RESULTS 16
+typedef struct db_cursor {
+	struct db_cursor *next;
+	int index;
+	const char *keys[RESULTS];
+	db_entry *values[RESULTS];
+} db_cursor;
+
 #define ID4_VERSION 0x01
 #define RELEASE_VERSION ID4_VERSION
 #define MIN_VERSION ID4_VERSION
 
-int list_keys(db_table *pl, const char *key, char *body, size_t size) {
-#define BATCH 16
-	size_t len = size - 1;
-	void *matches[BATCH];
-	int total = 0, result;
-	char * b = body;
+void cursor_free(db_cursor **cur) {
+	while (*cur) {
+		db_cursor *pos = *cur;
+		*cur = pos->next;
+		free(pos);
+	}
+}
 
+void cursor_reset(db_cursor *cur) {
+	if (cur) {
+		cur->index = 0;
+	}
+}
+
+bool cursor_get(db_cursor *cur, const char **key, db_entry **val) {
+	db_cursor *pos = cur;
+	int index = cur->index;
+	const char *k;
+	while (pos && index > RESULTS) {
+		index -= RESULTS;
+		pos = pos->next;
+	}
+	k = pos->keys[index];
+	if (!k || !pos) return false;
+	if (key) *key = k;
+	if (val) *val = pos->values[index];
+	++cur->index;
+	return true;
+}
+
+char * to_json(db_cursor *cur, char *body, size_t size) {
+	if (!cur->keys[0]) {
+		return strncpy(body, "{}\n", size);
+	}
+	return body;
+}
+
+int list_keys(db_table *pl, const char *key, db_cursor **out) {
+	void *matches[RESULTS];
+	int total = 0, result;
+	db_cursor * cur = NULL;
 
 	do {
-		result = cb_find_prefix(&pl->trie, key, strlen(key), matches, BATCH, total);
+		result = cb_find_prefix(&pl->trie, key, strlen(key), matches, RESULTS, total);
 		if (result>=1) {
 			int i;
+			db_cursor *cnew = malloc(sizeof(db_cursor));
+			if (!cnew) {
+				return -1;
+			}
+			cnew->next = 0;
+			if (cur) {
+				cur->next = cnew;
+				cur = cur->next;
+			}
+			else {
+				*out = cur = cnew;
+			}
 			for (i = 0; i != result; ++i) {
-				size_t bytes;
-				db_entry entry;
-				cb_get_kv(matches[i], &entry, sizeof(db_entry));
-				bytes = _snprintf(b, len, "%s: ", (const char *)matches[i]);
-				len -= bytes;
-				b += bytes;
-				bytes = _min(len, entry.size);
-				memcpy(b, entry.data, bytes);
-				len -= bytes;
-				b += bytes;
-				if (len>0) {
-					b[0] = '\n';
-					++b;
-					--len;
-				}
+				cb_get_kv_ex(matches[i], cur->values + i);
+				cur->keys[i] = matches[i];
 			}
 			total += result;
 		}
-	} while (result == BATCH);
-	b[0] = 0;
+	} while (result == RESULTS);
+	cur->keys[result] = 0;
+	cur->index = 0;
 	return total;
 }
 

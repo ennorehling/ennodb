@@ -140,14 +140,31 @@ static void test_nosql_list_keys(CuTest *tc) {
 	db_table tbl = { { 0 }, 0 };
 	db_entry c1 = mk_entry("GOOD FOR YOU");
 	db_entry c2 = mk_entry("HODOR!");
-	char body[128];
+	struct db_cursor * cur;
+	char buffer[128];
+	const char *key;
+	db_entry *val;
 
 	set_key(&tbl, "mayo", &c1);
 	set_key(&tbl, "hodor", &c2);
-	CuAssertIntEquals(tc, 2, list_keys(&tbl, "", body, sizeof(body)));
-	CuAssertStrEquals(tc, "hodor: HODOR!\nmayo: GOOD FOR YOU\n", body);
-	CuAssertIntEquals(tc, 1, list_keys(&tbl, "ho", body, sizeof(body)));
-	CuAssertStrEquals(tc, "hodor: HODOR!\n", body);
+	CuAssertIntEquals(tc, 2, list_keys(&tbl, "", &cur));
+	CuAssertIntEquals(tc, true, cursor_get(cur, &key, &val));
+	CuAssertStrEquals(tc, "hodor", key);
+	CuAssertStrEquals(tc, "HODOR!", get_value(val, buffer, sizeof(buffer)));
+	cursor_get(cur, &key, &val);
+	CuAssertStrEquals(tc, "mayo", key);
+	CuAssertStrEquals(tc, "GOOD FOR YOU", get_value(val, buffer, sizeof(buffer)));
+	cursor_get(cur, &key, &val);
+	key = 0;
+	CuAssertPtrEquals(tc, 0, (void *)key);
+	cursor_reset(cur);
+	cursor_get(cur, &key, &val);
+	CuAssertStrEquals(tc, "hodor", key);
+	CuAssertStrEquals(tc, "HODOR!", get_value(val, buffer, sizeof(buffer)));
+	cursor_free(&cur);
+	CuAssertPtrEquals(tc, 0, cur);
+	CuAssertIntEquals(tc, 1, list_keys(&tbl, "ho", &cur));
+	cursor_free(&cur);
 }
 
 void add_suite_critbit(CuSuite *suite);
