@@ -104,7 +104,7 @@ int list_keys(db_table *pl, const char *key, db_cursor **out) {
 				*out = cur = cnew;
 			}
 			for (i = 0; i != result; ++i) {
-				cb_get_kv_ex(matches[i], cur->values + i);
+				cb_get_kv_ex(matches[i], (void **)(cur->values + i));
 				cur->keys[i] = matches[i];
 			}
 			total += result;
