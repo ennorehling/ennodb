@@ -148,7 +148,10 @@ static int db_dump_keys(FCGX_Request *req, db_table *pl, const char *key) {
                 strncpy(b + result, val->data, bytes);
                 bytes += (size_t)result;
                 b += bytes;
-                len -= bytes;
+                if (len>bytes) {
+                    *b++ = '\n';
+                    len = len - bytes - 1;
+                }
             }
         }
         http_response(req->out, 200, "OK", body, strlen(body));

@@ -21,8 +21,10 @@ if [ ! $lines -eq 1 ]; then
   exit 1
 fi
 
-lines=`curl -s $URL/l/ass | wc -l`
+curl -o itest/ass -s $URL/l/ass
+lines=`cat itest/ass | wc -l`
 if [ ! $lines -eq 3 ]; then
-  echo "ERROR: expected three values for 'l/ass', got $lines"
+  echo "ERROR: expected three values for 'l/ass', got $lines:"
+  cat itest/ass
   exit 1
 fi
