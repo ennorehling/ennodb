@@ -22,22 +22,25 @@ test: $(TESTS)
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
 
-critbit/CuTest.o: critbit/CuTest.c
+tests.o: tests.c
+	$(CC) $(CFLAGS) -DMOCKFCGI -o $@ -c $< $(INCLUDES)
+
+CuTest.o: critbit/CuTest.c
 	$(CC) $(CFLAGS) -Wno-format-nonliteral -o $@ -c $< $(INCLUDES)
 
-critbit/critbit.o: critbit/critbit.c
+critbit.o: critbit/critbit.c
 	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
 
-iniparser/iniparser.o: iniparser/iniparser.c
+iniparser.o: iniparser/iniparser.c
 	$(CC) $(CFLAGS) -Wno-unused-macros -o $@ -c $< $(INCLUDES)
 
-cgiapp.a: cgiapp.o critbit/critbit.o iniparser/iniparser.o
+cgiapp.a: cgiapp.o critbit.o iniparser.o
 	$(AR) -q $@ $^
 
 ennodb: ennodb.o nosql.o cgiapp.a
 	$(CC) $(CFLAGS) -o $@ $^ -lfcgi $(LDFLAGS)
 
-tests: tests.o nosql.o critbit/test_critbit.o critbit/CuTest.o critbit/critbit.o
+tests: ennodb.o mockfcgi.o tests.o nosql.o critbit/test_critbit.o CuTest.o critbit.o iniparser.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:

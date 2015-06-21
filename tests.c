@@ -5,6 +5,7 @@
 #include <critbit.h>
 #include "nosql.h"
 #include "cgiapp.h"
+#include "mockfcgi.h"
 
 #include <string.h>
 #include <stdio.h>
