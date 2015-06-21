@@ -4,6 +4,7 @@
 #include <CuTest.h>
 #include <critbit.h>
 #include "nosql.h"
+#include "cgiapp.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -16,14 +17,14 @@
 static const char *binlog = "binlog.db";
 
 static char * get_value(db_entry *cur, char *buffer, size_t size) {
-	if (size > cur->size + 1) {
-		memcpy(buffer, cur->data, cur->size);
-		buffer[cur->size] = 0;
-	}
-	else {
-		buffer[0] = 0;
-	}
-	return buffer;
+    if (size > cur->size + 1) {
+        memcpy(buffer, cur->data, cur->size);
+        buffer[cur->size] = 0;
+    }
+    else {
+        buffer[0] = 0;
+    }
+    return buffer;
 }
 
 static db_entry mk_entry(const char *str) {
@@ -70,7 +71,7 @@ static void test_nosql_idempotent(CuTest *tc) {
 static void test_replay_log_multi(CuTest *tc) {
     db_table tbl = { { 0 }, 0 };
     db_entry cur = mk_entry("HODOR");
-	char buffer[32];
+    char buffer[32];
 
     _unlink(binlog);
     open_log(&tbl, binlog);
@@ -84,13 +85,13 @@ static void test_replay_log_multi(CuTest *tc) {
     CuAssertIntEquals(tc, 0, _unlink(binlog));
     memset(&cur, 0, sizeof(cur));
     CuAssertIntEquals(tc, 200, get_key(&tbl, "hodor", &cur));
-	CuAssertStrEquals(tc, "NOPE!", get_value(&cur, buffer, sizeof(buffer)));
+    CuAssertStrEquals(tc, "NOPE!", get_value(&cur, buffer, sizeof(buffer)));
 }
 
 static void test_replay_log(CuTest *tc) {
     db_table tbl = { { 0 }, 0 };
     db_entry cur = mk_entry("HODOR");
-	char buffer[64];
+    char buffer[64];
 
     _unlink(binlog);
     open_log(&tbl, binlog);
@@ -102,7 +103,7 @@ static void test_replay_log(CuTest *tc) {
     CuAssertIntEquals(tc, 0, _unlink(binlog));
     memset(&cur, 0, sizeof(cur));
     CuAssertIntEquals(tc, 200, get_key(&tbl, "hodor", &cur));
-	CuAssertStrEquals(tc, "HODOR", get_value(&cur, buffer, sizeof(buffer)));
+    CuAssertStrEquals(tc, "HODOR", get_value(&cur, buffer, sizeof(buffer)));
 }
 
 static void test_empty_log(CuTest *tc) {
@@ -123,7 +124,7 @@ static void test_same_prefix(CuTest *tc) {
     db_entry c1 = mk_entry("<img src='http://placekitten.com/g/200/300' />");
     db_entry c2 = mk_entry("<img src='http://placekitten.com/g/300/400' />");
     db_entry result;
-    
+
     _unlink(binlog);
     set_key(&tbl, "cat", &c1);
     set_key(&tbl, "catz", &c1);
@@ -137,34 +138,42 @@ static void test_same_prefix(CuTest *tc) {
 }
 
 static void test_nosql_list_keys(CuTest *tc) {
-	db_table tbl = { { 0 }, 0 };
-	db_entry c1 = mk_entry("GOOD FOR YOU");
-	db_entry c2 = mk_entry("HODOR!");
-	struct db_cursor * cur;
-	char buffer[128];
-	const char *key;
-	db_entry *val;
+    db_table tbl = { { 0 }, 0 };
+    db_entry c1 = mk_entry("GOOD FOR YOU");
+    db_entry c2 = mk_entry("HODOR!");
+    struct db_cursor * cur;
+    char buffer[128];
+    const char *key;
+    db_entry *val;
 
-	set_key(&tbl, "mayo", &c1);
-	set_key(&tbl, "hodor", &c2);
-	CuAssertIntEquals(tc, 2, list_keys(&tbl, "", &cur));
-	CuAssertIntEquals(tc, true, cursor_get(cur, &key, &val));
-	CuAssertStrEquals(tc, "hodor", key);
-	CuAssertStrEquals(tc, "HODOR!", get_value(val, buffer, sizeof(buffer)));
-	cursor_get(cur, &key, &val);
-	CuAssertStrEquals(tc, "mayo", key);
-	CuAssertStrEquals(tc, "GOOD FOR YOU", get_value(val, buffer, sizeof(buffer)));
-	cursor_get(cur, &key, &val);
-	key = 0;
-	CuAssertPtrEquals(tc, 0, (void *)key);
-	cursor_reset(cur);
-	cursor_get(cur, &key, &val);
-	CuAssertStrEquals(tc, "hodor", key);
-	CuAssertStrEquals(tc, "HODOR!", get_value(val, buffer, sizeof(buffer)));
-	cursor_free(&cur);
-	CuAssertPtrEquals(tc, 0, cur);
-	CuAssertIntEquals(tc, 1, list_keys(&tbl, "ho", &cur));
-	cursor_free(&cur);
+    set_key(&tbl, "mayo", &c1);
+    set_key(&tbl, "hodor", &c2);
+    CuAssertIntEquals(tc, 2, list_keys(&tbl, "", &cur));
+    CuAssertIntEquals(tc, true, cursor_get(cur, &key, &val));
+    CuAssertStrEquals(tc, "hodor", key);
+    CuAssertStrEquals(tc, "HODOR!", get_value(val, buffer, sizeof(buffer)));
+    cursor_get(cur, &key, &val);
+    CuAssertStrEquals(tc, "mayo", key);
+    CuAssertStrEquals(tc, "GOOD FOR YOU", get_value(val, buffer, sizeof(buffer)));
+    cursor_get(cur, &key, &val);
+    key = 0;
+    CuAssertPtrEquals(tc, 0, (void *)key);
+    cursor_reset(cur);
+    cursor_get(cur, &key, &val);
+    CuAssertStrEquals(tc, "hodor", key);
+    CuAssertStrEquals(tc, "HODOR!", get_value(val, buffer, sizeof(buffer)));
+    cursor_free(&cur);
+    CuAssertPtrEquals(tc, 0, cur);
+    CuAssertIntEquals(tc, 1, list_keys(&tbl, "ho", &cur));
+    cursor_free(&cur);
+}
+
+void test_create_app(CuTest *tc) {
+    struct app * app = create_app(0, NULL);
+    FCGX_Request *req;
+    CuAssertPtrNotNull(tc, app);
+    req = FCGM_CreateRequest("", "REQUEST_METHOD=GET PATH_INFO=/k/hodor");
+    app->process(app, req);
 }
 
 void add_suite_critbit(CuSuite *suite);
@@ -174,11 +183,12 @@ int main(void) {
     CuSuite *suite = CuSuiteNew();
 
     add_suite_critbit(suite);
+    SUITE_ADD_TEST(suite, test_create_app);
     SUITE_ADD_TEST(suite, test_nosql_set_get);
     SUITE_ADD_TEST(suite, test_nosql_idempotent);
     SUITE_ADD_TEST(suite, test_nosql_update);
-	SUITE_ADD_TEST(suite, test_nosql_list_keys);
-	SUITE_ADD_TEST(suite, test_replay_log);
+    SUITE_ADD_TEST(suite, test_nosql_list_keys);
+    SUITE_ADD_TEST(suite, test_replay_log);
     SUITE_ADD_TEST(suite, test_empty_log);
     SUITE_ADD_TEST(suite, test_replay_log_multi);
     SUITE_ADD_TEST(suite, test_same_prefix);
