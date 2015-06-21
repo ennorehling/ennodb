@@ -51,8 +51,8 @@
       </PrecompiledHeader>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Enno\Documents\fastcgi\critbit;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MOCKFCGI;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\critbit;$(SolutionDir)\iniparser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -82,12 +82,16 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="..\..\critbit\test_critbit.c" />
+    <ClCompile Include="..\..\iniparser\iniparser.c" />
+    <ClCompile Include="..\ennodb.c" />
+    <ClCompile Include="..\mockfcgi.c" />
     <ClCompile Include="..\nosql.c" />
     <ClCompile Include="..\tests.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\critbit\critbit.h" />
     <ClInclude Include="..\..\critbit\CuTest.h" />
+    <ClInclude Include="..\mockfcgi.h" />
     <ClInclude Include="..\nosql.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,5 +1,10 @@
 #pragma once
+
+#ifdef MOCKFCGI
+#include "mockfcgi.h"
+#else
 #include <fcgiapp.h>
+#endif
 
 typedef struct app {
     void *data;

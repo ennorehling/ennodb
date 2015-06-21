@@ -1,3 +1,11 @@
+#ifdef WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#else
+#define _snprintf snprintf
+#endif
+
+#define _min(a, b) (((a) < (b)) ? (a) : (b))
+
 #include "cgiapp.h"
 #include "nosql.h"
 
@@ -79,7 +87,9 @@ static int init(void * self)
         abort();
     }
     signal(SIGINT, signal_handler);
+#ifdef SIGHUP
     signal(SIGHUP, signal_handler);
+#endif
     return 0;
 }
 
@@ -121,10 +131,26 @@ static int db_post(FCGX_Request *req, db_table *pl, const char *prefix) {
 static int db_dump_keys(FCGX_Request *req, db_table *pl, const char *key) {
     char body[4096]; // TODO: this limit is unnecessary.
     int total;
+    struct db_cursor *cur;
 
-    total = list_keys(pl, key, body, sizeof(body));
+    total = list_keys(pl, key, &cur);
     printf("found %d matches for prefix %s\n", total, key);
     if (total>0) {
+        char *b = body;
+        size_t len = sizeof(body) - 1;
+        const char *key;
+        db_entry *val;
+        while (len && cursor_get(cur, &key, &val)) {
+            int result = _snprintf(b, len, "%s: ", key);
+            if (result > 0) {
+                size_t bytes = _min(len - (size_t)result, val->size);
+                strncpy(b + result, val->data, bytes);
+                strncpy(b + result, val->data, bytes);
+                bytes += (size_t)result;
+                b += bytes;
+                len -= bytes;
+            }
+        }
         http_response(req->out, 200, "OK", body, strlen(body));
     } else {
         http_not_found(req->out, NULL);
@@ -158,7 +184,7 @@ static int process(void *self, FCGX_Request *req)
     if (strstr(script, "debug")) {
         // TODO: remove this HACK!
         char body[2048];
-        snprintf(body, sizeof(body), "script: %s\nmethod: %s\nprefix: %s\n", script, method, prefix);
+        _snprintf(body, sizeof(body), "script: %s\nmethod: %s\nprefix: %s\n", script, method, prefix);
         http_response(req->out, 200, "OK", body, strlen(body));
         return 0;
     }
@@ -213,14 +239,16 @@ static void signal_handler(int sig) {
         done(myapp.data);
         abort();
     }
+#ifdef SIGHUP
     if (sig==SIGHUP) {
         printf("received SIGHUP\n");
         fflush(((db_table *)myapp.data)->binlog);
         reload_config();
     }
+#endif
 }
 
-static void print_version() {
+static void print_version(void) {
     printf("EnnoDB %s\nCopyright (C) 2015 Enno Rehling.\n", VERSION);
 }
 
