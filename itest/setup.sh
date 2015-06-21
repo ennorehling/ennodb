@@ -12,4 +12,5 @@ mkdir -p ${ITEST_PREFIX}/nginx
 if [ "$1" = "-e" ]; then
 export ITEST_HOST=localhost
 export ITEST_PORT=8080
+env|grep ITEST
 fi
