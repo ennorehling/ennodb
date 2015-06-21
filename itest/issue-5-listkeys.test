@@ -28,3 +28,4 @@ if [ ! $lines -eq 3 ]; then
   cat itest/ass
   exit 1
 fi
+rm -f itest/ass
