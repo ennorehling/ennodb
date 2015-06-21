@@ -60,15 +60,15 @@ FCGX_Stream *FCGM_CreateStream(const void *data, size_t size) {
 
 FCGX_Request *FCGM_CreateRequest(const char *body, const char *env) {
     FCGX_Request *req = malloc(sizeof(FCGX_Request));
-    char *envp, *tok;
+    char *tok;
     int p = 0;
 
     if (*env) {
         size_t len = strlen(env) + 1;
-        req->envp = malloc(sizeof(FCGX_ParamArray) + len);
-        envp = (char *)(req->envp + 1);
-        memcpy(envp, env, len);
-        tok = strtok(envp, "=");
+        req->envp = malloc(sizeof(FCGX_ParamArray));
+        req->envp->paramstr = malloc(len);
+        memcpy(req->envp->paramstr, env, len);
+        tok = strtok(req->envp->paramstr, "=");
         while (tok && p != MAXPARAM) {
             req->envp->param[p++] = tok;
             if (tok) {

@@ -4,17 +4,10 @@
 
 #define MAXPARAM 8
 
-#ifdef WIN32
-#pragma warning(push)
-#pragma warning(disable : 4200)
-#endif
 typedef struct _FCGX_ParamArray {
     char *param[MAXPARAM];
-    char paramstr[0];
+    char *paramstr;
 } *FCGX_ParamArray;
-#ifdef WIN32
-#pragma warning(pop)
-#endif
 
 typedef struct FCGX_Stream {
     size_t length;
