@@ -25,6 +25,9 @@ test: $(TESTS)
 tests.o: tests.c
 	$(CC) $(CFLAGS) -DMOCKFCGI -o $@ -c $< $(INCLUDES)
 
+%-test.o: %.c
+	$(CC) $(CFLAGS) -DMOCKFCGI -o $@ -c $< $(INCLUDES)
+
 CuTest.o: critbit/CuTest.c
 	$(CC) $(CFLAGS) -Wno-format-nonliteral -o $@ -c $< $(INCLUDES)
 
@@ -40,8 +43,8 @@ cgiapp.a: cgiapp.o critbit.o iniparser.o
 ennodb: ennodb.o nosql.o cgiapp.a
 	$(CC) $(CFLAGS) -o $@ $^ -lfcgi $(LDFLAGS)
 
-tests: ennodb.o mockfcgi.o tests.o nosql.o critbit/test_critbit.o CuTest.o critbit.o iniparser.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+tests: ennodb-test.o mockfcgi.o tests.o nosql.o critbit/test_critbit.o CuTest.o critbit.o iniparser.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
 	rm -f *~ *.a *.o */*.o $(PROGRAMS) $(TESTS)
