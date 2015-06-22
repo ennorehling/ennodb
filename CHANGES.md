@@ -1,4 +1,4 @@
-## Changes with EnnoDB 1.4 (19 Jun 2015)
+## Changes with EnnoDB 1.4 (22 Jun 2015)
 
 * moved all keys under the /k/ endpoint
 * add /l/ endpoint to list keys by prefix

@@ -18,7 +18,7 @@
 #include <critbit.h>
 #include <iniparser.h>
 
-#define VERSION "1.4"
+#define VERSION "1.5"
 
 static const char * binlog = NULL;
 static const char *inifile = "ennodb.ini";
