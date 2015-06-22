@@ -65,7 +65,7 @@ FCGX_Request *FCGM_CreateRequest(const char *body, const char *env) {
     if (*env) {
         int p;
         size_t len = strlen(env) + 1;
-        req->envp = malloc(sizeof(FCGX_ParamArray));
+        req->envp = malloc(sizeof(struct FCGX_ParamArray));
         req->envp->paramstr = malloc(len);
         memcpy(req->envp->paramstr, env, len);
 //        strcpy(req->envp->paramstr, env);

@@ -4,7 +4,7 @@
 
 #define MAXPARAM 8
 
-typedef struct _FCGX_ParamArray {
+typedef struct FCGX_ParamArray {
     char *paramstr;
     char *param[MAXPARAM];
 } *FCGX_ParamArray;

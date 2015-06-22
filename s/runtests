@@ -9,6 +9,8 @@ tests=$@
 fi
 
 make -k
+valgrind --error-exitcode=1 ./tests
+
 itest/setup.sh
 errors=0
 for test in $tests ; do
