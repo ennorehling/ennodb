@@ -5,8 +5,8 @@
 #define MAXPARAM 8
 
 typedef struct _FCGX_ParamArray {
-    char *param[MAXPARAM];
     char *paramstr;
+    char *param[MAXPARAM];
 } *FCGX_ParamArray;
 
 typedef struct FCGX_Stream {
