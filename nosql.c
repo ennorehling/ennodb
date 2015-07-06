@@ -1,4 +1,4 @@
-#ifdef _MSC_VER
+﻿#ifdef _MSC_VER
 # define _CRT_SECURE_NO_WARNINGS
 #endif
 
@@ -35,10 +35,10 @@ static const char * id4 = "ENNO"; /* file magic: 0x4f4e4e45 */
 
 #define RESULTS 16
 typedef struct db_cursor {
-	struct db_cursor *next;
-	int index;
-	const char *keys[RESULTS];
-	db_entry *values[RESULTS];
+    struct db_cursor *next;
+    int index;
+    const char *keys[RESULTS];
+    db_entry *values[RESULTS];
 } db_cursor;
 
 #define ID4_VERSION 0x01
@@ -46,73 +46,75 @@ typedef struct db_cursor {
 #define MIN_VERSION ID4_VERSION
 
 void cursor_free(db_cursor **cur) {
-	while (*cur) {
-		db_cursor *pos = *cur;
-		*cur = pos->next;
-		free(pos);
-	}
+    while (*cur) {
+        db_cursor *pos = *cur;
+        *cur = pos->next;
+        free(pos);
+    }
 }
 
 void cursor_reset(db_cursor *cur) {
-	if (cur) {
-		cur->index = 0;
-	}
+    if (cur) {
+        cur->index = 0;
+    }
 }
 
 bool cursor_get(db_cursor *cur, const char **key, db_entry **val) {
-	db_cursor *pos = cur;
-	int index = cur->index;
-	const char *k;
-	while (pos && index > RESULTS) {
-		index -= RESULTS;
-		pos = pos->next;
-	}
-	k = pos->keys[index];
-	if (!k || !pos) return false;
-	if (key) *key = k;
-	if (val) *val = pos->values[index];
-	++cur->index;
-	return true;
+    db_cursor *pos = cur;
+    int index = cur->index;
+    const char *k;
+    while (pos && index > RESULTS) {
+        index -= RESULTS;
+        pos = pos->next;
+    }
+    if (!pos) return false;
+    k = pos->keys[index];
+    if (!k) return false;
+    if (key) *key = k;
+    if (val) *val = pos->values[index];
+    ++cur->index;
+    return true;
 }
 
 char * to_json(db_cursor *cur, char *body, size_t size) {
-	if (!cur->keys[0]) {
-		return strncpy(body, "{}\n", size);
-	}
-	return body;
+    if (!cur->keys[0]) {
+        return strncpy(body, "{}\n", size);
+    }
+    return body;
 }
 
 int list_keys(db_table *pl, const char *key, db_cursor **out) {
-	void *matches[RESULTS];
-	int total = 0, result;
-	db_cursor * cur = NULL;
+    void *matches[RESULTS];
+    int total = 0, result;
+    db_cursor * cur = NULL;
+    size_t keylen = strlen(key);
 
-	do {
-		result = cb_find_prefix(&pl->trie, key, strlen(key), matches, RESULTS, total);
-		if (result>=1) {
-			int i;
-			db_cursor *cnew = malloc(sizeof(db_cursor));
-			if (!cnew) {
-				return -1;
-			}
-			cnew->next = 0;
-			if (cur) {
-				cur->next = cnew;
-				cur = cur->next;
-			}
-			else {
-				*out = cur = cnew;
-			}
-			for (i = 0; i != result; ++i) {
-				cb_get_kv_ex(matches[i], (void **)(cur->values + i));
-				cur->keys[i] = matches[i];
-			}
-			total += result;
-		}
-	} while (result == RESULTS);
-	cur->keys[result] = 0;
-	cur->index = 0;
-	return total;
+    do {
+        result = cb_find_prefix(&pl->trie, key, keylen, matches, RESULTS, total);
+        if (result >= 1) {
+            int i;
+            db_cursor *cnew = malloc(sizeof(db_cursor));
+            if (!cnew) {
+                return -1;
+            }
+            cnew->next = 0;
+            if (cur) {
+                cur->next = cnew;
+                cur = cur->next;
+            }
+            else {
+                *out = cur = cnew;
+            }
+            for (i = 0; i != result; ++i) {
+                cb_get_kv_ex(matches[i], (void **)(cur->values + i));
+                cur->keys[i] = matches[i];
+            }
+            total += result;
+        }
+    } while (result == RESULTS);
+    cur->keys[result] = 0;
+    cur->index = 0;
+    return total;
 }
 
 int get_key(db_table *pl, const char *key, db_entry *entry) {
@@ -120,22 +122,23 @@ int get_key(db_table *pl, const char *key, db_entry *entry) {
     int result;
 
     assert(pl && key && entry);
-    result = cb_find_prefix(&pl->trie, key, strlen(key)+1, matches, 2, 0);
+    result = cb_find_prefix(&pl->trie, key, strlen(key) + 1, matches, 2, 0);
     printf("found %d matches for %s\n", result, key);
-    if (result==1) {
+    if (result == 1) {
         cb_get_kv(matches[0], entry, sizeof(db_entry));
         return 200;
-    } else {
+    }
+    else {
         return 404;
     }
 }
 
 static void insert_key(critbit_tree *trie, const char *key, size_t keylen, db_entry *entry) {
-    char data[MAXENTRY+MAXKEY];
+    char data[MAXENTRY + MAXKEY];
     size_t len;
 
     len = cb_new_kv(key, keylen, entry, sizeof(db_entry), data);
-    cb_insert(trie, data, len);    
+    cb_insert(trie, data, len);
 }
 
 static void set_key_i(db_table *pl, const char *key, size_t len, db_entry *entry) {
@@ -197,10 +200,10 @@ int open_log(db_table *pl, const char *logfile) {
 int read_log(db_table *pl, const char *logfile) {
     int fd = _open(logfile, O_RDONLY);
     int result = 0;
-    if (fd>0) {
+    if (fd > 0) {
         void *logdata;
         off_t fsize = _lseek(fd, 0, SEEK_END);
-        if (fsize>0) {
+        if (fsize > 0) {
 #ifdef WIN32
             HANDLE fm = CreateFileMapping((HANDLE)_get_osfhandle(fd), NULL, PAGE_READONLY, 0, 0, NULL);
             logdata = (void *)MapViewOfFile(fm, FILE_MAP_READ, 0, 0, fsize);
@@ -210,9 +213,9 @@ int read_log(db_table *pl, const char *logfile) {
             if (logdata) {
                 short version = 0;
                 const char *data = (const char *)logdata;
-                if (fsize>=4 && memcmp(data, id4, 4) == 0) {
+                if (fsize >= 4 && memcmp(data, id4, 4) == 0) {
                     size_t header = 4 + sizeof(short);
-                    memcpy(&version, data+4, sizeof(short));
+                    memcpy(&version, data + 4, sizeof(short));
                     data += header;
                 }
                 if (version < MIN_VERSION) {
@@ -225,7 +228,7 @@ int read_log(db_table *pl, const char *logfile) {
                         db_entry entry;
                         const char *key;
                         size_t len;
-                        
+
                         len = *(const size_t *)(const void *)data;
                         data += sizeof(size_t);
                         key = (const char *)data;

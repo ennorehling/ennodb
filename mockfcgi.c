@@ -1,16 +1,37 @@
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
+#else
+#define _vsnprintf vsnprintf
 #endif
 #include "mockfcgi.h"
 
 #include <assert.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
+
+static void stream_reserve(FCGX_Stream *stream, size_t n) {
+    if (!stream->data) {
+        stream->pos = stream->data = malloc(n);
+        stream->length = n;
+    }
+    else {
+        ptrdiff_t used;
+        assert(stream->pos >= stream->data);
+        used = stream->pos - stream->data;
+        if (stream->length - used < n) {
+            stream->length = used + n;
+            stream->data = realloc(stream->data, stream->length);
+            stream->pos = stream->data + used;
+        }
+    }
+}
 
 char *FCGX_GetParam(const char *name, FCGX_ParamArray envp) {
     int p;
     for (p = 0; envp->param[p]; p += 2) {
-        if (strcmp(name, envp->param[p])) {
+        if (strcmp(name, envp->param[p])==0) {
             return envp->param[p + 1];
         }
     }
@@ -18,16 +39,30 @@ char *FCGX_GetParam(const char *name, FCGX_ParamArray envp) {
 }
 
 int FCGX_FPrintF(FCGX_Stream *stream, const char *format, ...) {
+    char buffer[4096]; // TODO: a wild size limit appears!
+    int size;
+    va_list argptr;
+    va_start(argptr, format);
     assert(stream);
     assert(format);
-    return 0;
+    size = _vsnprintf(buffer, sizeof(buffer), format, argptr);
+    if (size >= 0) {
+        int n = FCGX_PutStr(buffer, size, stream);
+        return n;
+    }
+    // ERROR
+    return size;
 }
 
 int FCGX_PutStr(const char *str, int n, FCGX_Stream *stream) {
+    size_t len = (size_t)n;
     assert(str);
     assert(n >= 0);
     assert(stream);
-    return 0;
+    stream_reserve(stream, len);
+    memcpy(stream->pos, str, len);
+    stream->pos += len;
+    return n;
 }
 
 int FCGX_GetStr(char *str, int n, FCGX_Stream *stream) {
