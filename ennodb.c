@@ -64,19 +64,20 @@ static int http_invalid_method(FCGX_Stream *out, const char *body) {
     return http_response(out, 405, "Invalid Method", body, len);
 }
 
-static void done(void *self) {
-    db_table *pl = (db_table *)self;
+static void done(appdata self) {
+    db_table *pl = (db_table *)self.ptr;
     if (pl->binlog) {
         fclose(pl->binlog);
     }
-    free(self);
+    free(self.ptr);
+    self.ptr = NULL;
 }
 
 static void signal_handler(int sig);
 
-static int init(void * self)
+static int init(appdata self)
 {
-    db_table *pl = (db_table *)self;
+    db_table *pl = (db_table *)self.ptr;
     if (!binlog) return 1;
     if (read_log(pl, binlog) < 0) {
         printf("could not read %s, aborting.\n", binlog);
@@ -161,11 +162,11 @@ static int db_dump_keys(FCGX_Request *req, db_table *pl, const char *key) {
     return 0;
 }
 
-static int process(void *self, FCGX_Request *req)
+static int process(appdata self, FCGX_Request *req)
 {
     const char *script, *prefix, *method;
-    db_table *pl = (db_table *)self;
-    assert(self && req);
+    db_table *pl = (db_table *)self.ptr;
+    assert(pl && req);
 
     if (cycle_log) {
         close_log(pl);
@@ -245,7 +246,7 @@ static void signal_handler(int sig) {
 #ifdef SIGHUP
     if (sig==SIGHUP) {
         printf("received SIGHUP\n");
-        fflush(((db_table *)myapp.data)->binlog);
+        fflush(((db_table *)myapp.data.ptr)->binlog);
         reload_config();
     }
 #endif
@@ -273,6 +274,6 @@ struct app * create_app(int argc, char **argv) {
         }
     }
     reload_config();
-    myapp.data = calloc(1, sizeof(db_table));
+    myapp.data.ptr = calloc(1, sizeof(db_table));
     return &myapp;
 }
