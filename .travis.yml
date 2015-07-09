@@ -12,7 +12,6 @@ before_script:
 script:
   - s/build
   - s/runtests
-  - s/runtests
 os:
   - linux
   - osx
