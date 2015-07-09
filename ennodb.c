@@ -234,7 +234,7 @@ static void reload_config(void) {
 }
 
 static struct app myapp = {
-    0, init, done, process
+    { 0 }, init, done, process
 };
 
 static void signal_handler(int sig) {
