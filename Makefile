@@ -1,5 +1,6 @@
+#EXT=../
 PREFIX = /opt
-CFLAGS = -g -Wall -Werror -Wextra -Iiniparser -Icritbit
+CFLAGS = -g -Wall -Werror -Wextra -I$(EXT)iniparser -I$(EXT)critbit
 PROGRAMS = ennodb
 TESTS = tests
 WEBSITE = $(PREFIX)/share/ennodb/www/
@@ -22,26 +23,29 @@ test: $(TESTS)
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
 
-critbit/CuTest.o: critbit/CuTest.c
+CuTest.o: $(EXT)critbit/CuTest.c
 	$(CC) $(CFLAGS) -Wno-format-nonliteral -o $@ -c $< $(INCLUDES)
 
-critbit/critbit.o: critbit/critbit.c
+critbit.o: $(EXT)critbit/critbit.c
 	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
 
-iniparser/iniparser.o: iniparser/iniparser.c
+test_critbit.o: $(EXT)critbit/test_critbit.c
+	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
+
+iniparser.o: $(EXT)iniparser/iniparser.c
 	$(CC) $(CFLAGS) -Wno-unused-macros -o $@ -c $< $(INCLUDES)
 
-cgiapp.a: cgiapp.o critbit/critbit.o iniparser/iniparser.o
+cgiapp.a: cgiapp.o critbit.o iniparser.o
 	$(AR) -q $@ $^
 
 ennodb: ennodb.o nosql.o cgiapp.a
 	$(CC) $(CFLAGS) -o $@ $^ -lfcgi $(LDFLAGS)
 
-tests: tests.o nosql.o critbit/test_critbit.o critbit/CuTest.o critbit/critbit.o
+tests: tests.o nosql.o test_critbit.o CuTest.o critbit.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f *~ *.a *.o */*.o $(PROGRAMS) $(TESTS)
+	rm -f *~ *.a *.o $(PROGRAMS) $(TESTS)
 
 install: $(PROGRAMS)
 	sudo mkdir -p $(PREFIX)/bin
