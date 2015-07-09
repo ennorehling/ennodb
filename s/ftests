@@ -1,0 +1,18 @@
+#!/bin/bash
+
+tests=ftest/*.test
+if [ "$#" != "0" ] ; then
+tests=$@
+fi
+
+errors=0
+for test in $tests ; do
+	$test
+    if [ ! $? -eq 0 ]; then
+      echo "FAILED: $test"
+      let errors=$errors+1
+    else
+      echo "PASSED: $test"
+    fi
+done
+exit $errors

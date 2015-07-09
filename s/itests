@@ -1,0 +1,21 @@
+#!/bin/bash
+export ITEST_HOST=localhost
+export ITEST_PORT=8080
+export ITEST_PREFIX=/tmp/itest
+
+tests=itest/*.test
+if [ "$#" != "0" ] ; then
+tests=$@
+fi
+
+itest/setup.sh
+errors=0
+for test in $tests ; do
+	$test
+    if [ ! $? -eq 0 ]; then
+      echo "FAILED: $test"
+      let errors=$errors+1
+    fi
+done
+itest/teardown.sh
+exit $errors
