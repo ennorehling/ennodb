@@ -20,7 +20,6 @@ typedef unsigned char _Bool;
 # define __bool_true_false_are_defined 1
 #endif
 
-
 typedef struct db_table {
     critbit_tree trie;
     FILE * binlog;

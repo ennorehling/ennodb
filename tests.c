@@ -174,7 +174,16 @@ void test_create_app(CuTest *tc) {
     FCGX_Request *req;
     CuAssertPtrNotNull(tc, app);
     req = FCGM_CreateRequest("", "REQUEST_METHOD=GET PATH_INFO=/k/hodor");
-    app->process(app, req);
+    app->process(app->data, req);
+}
+
+void test_accept_json(CuTest *tc) {
+    struct app * app = create_app(0, NULL);
+    FCGX_Request *req;
+    CuAssertPtrNotNull(tc, app);
+    req = FCGM_CreateRequest("", "REQUEST_METHOD=GET PATH_INFO=/k/hodor HTTP_ACCEPT=application/json");
+    app->process(app->data, req);
+    CuAssertStrEquals(tc, "", req->out->data);
 }
 
 void add_suite_critbit(CuSuite *suite);
@@ -185,6 +194,7 @@ int main(void) {
 
     add_suite_critbit(suite);
     SUITE_ADD_TEST(suite, test_create_app);
+    SUITE_ADD_TEST(suite, test_accept_json);
     SUITE_ADD_TEST(suite, test_nosql_set_get);
     SUITE_ADD_TEST(suite, test_nosql_idempotent);
     SUITE_ADD_TEST(suite, test_nosql_update);
