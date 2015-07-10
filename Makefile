@@ -22,11 +22,8 @@ test: $(TESTS)
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
 
-tests.o: tests.c
-	$(CC) $(CFLAGS) -DMOCKFCGI -o $@ -c $< $(INCLUDES)
-
-%-test.o: %.c
-	$(CC) $(CFLAGS) -DMOCKFCGI -o $@ -c $< $(INCLUDES)
+%.test.o: %.test.c
+	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES) -DMOCKFCGI 
 
 CuTest.o: critbit/CuTest.c
 	$(CC) $(CFLAGS) -Wno-format-nonliteral -o $@ -c $< $(INCLUDES)

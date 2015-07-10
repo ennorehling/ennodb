@@ -31,7 +31,7 @@ static void stream_reserve(FCGX_Stream *stream, size_t n) {
 char *FCGX_GetParam(const char *name, FCGX_ParamArray envp) {
     int p;
     for (p = 0; envp->param[p]; p += 2) {
-        if (strcmp(name, envp->param[p])==0) {
+        if (strcmp(name, envp->param[p]) == 0) {
             return envp->param[p + 1];
         }
     }
@@ -103,13 +103,13 @@ FCGX_Request *FCGM_CreateRequest(const char *body, const char *env) {
         req->envp = malloc(sizeof(struct FCGX_ParamArray));
         req->envp->paramstr = malloc(len);
         memcpy(req->envp->paramstr, env, len);
-//        strcpy(req->envp->paramstr, env);
+        //        strcpy(req->envp->paramstr, env);
         tok = strtok(req->envp->paramstr, "=");
-        for (p=0; tok && p != MAXPARAM;p+=2) {
+        for (p = 0; tok && p != MAXPARAM; p += 2) {
             req->envp->param[p] = tok;
             if (tok) {
                 tok = strtok(NULL, " ");
-                req->envp->param[p+1] = tok;
+                req->envp->param[p + 1] = tok;
                 assert(tok);
                 tok = strtok(NULL, "=");
             }
