@@ -1,13 +1,18 @@
+sudo: false
 language: c
 compiler:
   - gcc
   - clang
+addons:
+  apt:
+    packages:
+     - libfcgi-dev
+     - valgrind
+     - nginx
+     - spawn-fcgi
 before_install:
   - sudo apt-get update -qq
-install:
-  - s/install-dependencies
 before_script:
-  - s/script-dependencies
   - s/travis-build
 script:
   - s/build
