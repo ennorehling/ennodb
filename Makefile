@@ -40,7 +40,7 @@ cgiapp.a: cgiapp.o critbit.o iniparser.o
 ennodb: ennodb.o nosql.o cgiapp.a
 	$(CC) $(CFLAGS) -o $@ $^ -lfcgi $(LDFLAGS)
 
-tests: ennodb-test.o mockfcgi.o tests.o nosql.o critbit/test_critbit.o CuTest.o critbit.o iniparser.o
+tests: ennodb.test.o ennodb.o mockfcgi.o nosql.o critbit/test_critbit.o CuTest.o critbit.o iniparser.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:

@@ -3,7 +3,7 @@
 #include <stddef.h>
 
 #define MAXPARAM 8
-
+#ifdef WIN32
 typedef struct FCGX_ParamArray {
     char *paramstr;
     char *param[MAXPARAM];
@@ -24,6 +24,9 @@ char *FCGX_GetParam(const char *name, FCGX_ParamArray envp);
 int FCGX_FPrintF(FCGX_Stream *stream, const char *format, ...);
 int FCGX_PutStr(const char *str, int n, FCGX_Stream *stream);
 int FCGX_GetStr(char *str, int n, FCGX_Stream *stream);
+#else
+# include <fcgiapp.h>
+#endif
 
 FCGX_Request *FCGM_CreateRequest(const char *body, const char *env);
 FCGX_Stream *FCGM_CreateStream(const void *data, size_t size);

@@ -11,30 +11,69 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void stream_reserve(FCGX_Stream *stream, size_t n) {
-    if (!stream->data) {
-        stream->pos = stream->data = malloc(n);
-        stream->length = n;
+char *FCGX_GetParam(const char *name, FCGX_ParamArray envp) {
+    int p;
+    for (p = 0; envp[p]; p += 2) {
+        if (strcmp(name, envp[p]) == 0) {
+            return envp[p + 1];
+        }
+    }
+    return 0;
+}
+
+FCGX_Stream *FCGM_CreateStream(const void *data, size_t size) {
+    FCGX_Stream *strm = malloc(sizeof(FCGX_Stream));
+    if (!strm) {
+        goto FCGM_CreateStream_fail;
+    }
+    strm->isReader = (size!=0);
+    if (strm->isReader) {
+        strm->data = malloc(size);
+        if (!strm->data) {
+            goto FCGM_CreateStream_fail;
+        }
+        memcpy(strm->data, data, size);
+        strm->stop = strm->data + size;
+        strm->wrNext = strm->stop;
+        strm->rdNext = strm->data;
     }
     else {
-        ptrdiff_t used;
-        assert(stream->pos >= stream->data);
-        used = stream->pos - stream->data;
-        if (stream->length - used < n) {
-            stream->length = used + n;
-            stream->data = realloc(stream->data, stream->length);
-            stream->pos = stream->data + used;
-        }
+        strm->wrNext = strm->rdNext = strm->stop = strm->data = 0;
+    }
+    return strm;
+FCGM_CreateStream_fail:
+    free(strm);
+    return 0;
+}
+
+static void stream_reserve(FCGX_Stream *strm, size_t len) {
+    unsigned char **next = strm->isReader ? &strm->rdNext : &strm->wrNext;
+    assert(strm);
+    if (*next + len > strm->stop) {
+        unsigned char *buffer = (unsigned char *)strm->data;
+        size_t size = *next - buffer;
+        buffer = realloc(buffer, size + len);
+        strm->stop = buffer + size + len;
+        *next = buffer + size;
+        strm->data = buffer;
     }
 }
 
-char *FCGX_GetParam(const char *name, FCGX_ParamArray envp) {
-    int p;
-    for (p = 0; envp->param[p]; p += 2) {
-        if (strcmp(name, envp->param[p]) == 0) {
-            return envp->param[p + 1];
-        }
-    }
+int FCGX_PutStr(const char *str, int n, FCGX_Stream *stream) {
+    size_t len = (size_t)n;
+    assert(str);
+    assert(n >= 0);
+    assert(stream);
+    stream_reserve(stream, len);
+    memcpy(stream->wrNext, str, len);
+    stream->wrNext += len;
+    return n;
+}
+
+int FCGX_GetStr(char *str, int n, FCGX_Stream *stream) {
+    assert(str);
+    assert(n >= 0);
+    assert(stream);
     return 0;
 }
 
@@ -54,45 +93,6 @@ int FCGX_FPrintF(FCGX_Stream *stream, const char *format, ...) {
     return size;
 }
 
-int FCGX_PutStr(const char *str, int n, FCGX_Stream *stream) {
-    size_t len = (size_t)n;
-    assert(str);
-    assert(n >= 0);
-    assert(stream);
-    stream_reserve(stream, len);
-    memcpy(stream->pos, str, len);
-    stream->pos += len;
-    return n;
-}
-
-int FCGX_GetStr(char *str, int n, FCGX_Stream *stream) {
-    assert(str);
-    assert(n >= 0);
-    assert(stream);
-    return 0;
-}
-
-FCGX_Stream *FCGM_CreateStream(const void *data, size_t size) {
-    FCGX_Stream *strm = malloc(sizeof(FCGX_Stream));
-    if (!strm) {
-        return NULL;
-    }
-    if (!size) {
-        strm->data = 0;
-    }
-    else {
-        strm->data = malloc(size);
-        if (!strm->data) {
-            free(strm);
-            return NULL;
-        }
-        memcpy(strm->data, data, size);
-    }
-    strm->pos = strm->data;
-    strm->length = size;
-    return strm;
-}
-
 FCGX_Request *FCGM_CreateRequest(const char *body, const char *env) {
     FCGX_Request *req = malloc(sizeof(FCGX_Request));
     char *tok;
@@ -100,22 +100,24 @@ FCGX_Request *FCGM_CreateRequest(const char *body, const char *env) {
     if (*env) {
         int p;
         size_t len = strlen(env) + 1;
-        req->envp = malloc(sizeof(struct FCGX_ParamArray));
-        req->envp->paramstr = malloc(len);
-        memcpy(req->envp->paramstr, env, len);
-        //        strcpy(req->envp->paramstr, env);
-        tok = strtok(req->envp->paramstr, "=");
+        char *paramstr = malloc(len);
+
+        req->envp = calloc(MAXPARAM+2, sizeof(char *));
+        req->envp[MAXPARAM] = 0;
+        req->envp[MAXPARAM+1] = paramstr;
+        memcpy(paramstr, env, len);
+        tok = strtok(paramstr, "=");
         for (p = 0; tok && p != MAXPARAM; p += 2) {
-            req->envp->param[p] = tok;
+            req->envp[p] = tok;
             if (tok) {
                 tok = strtok(NULL, " ");
-                req->envp->param[p + 1] = tok;
+                req->envp[p + 1] = tok;
                 assert(tok);
                 tok = strtok(NULL, "=");
             }
         }
         if (p < MAXPARAM) {
-            req->envp->param[p] = 0;
+            req->envp[p] = 0;
         }
     }
     else {
