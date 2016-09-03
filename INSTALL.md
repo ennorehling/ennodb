@@ -18,7 +18,7 @@ unsure that these are installed, run:
 
 First, clone the git repository:
 
-	git clone https://github.com/badgerman/ennodb.git
+	git clone https://github.com/ennorehling/ennodb.git
 	cd ennodb
 	git submodule update
 
