@@ -15,4 +15,4 @@ script:
   - s/runtests
 os:
   - linux
-  - osx
+
